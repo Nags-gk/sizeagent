@@ -69,3 +69,29 @@ def test_evaluator_caches_and_budgets():
     from sizeagent.specs import BudgetExceeded
     with pytest.raises(BudgetExceeded):
         ev(random_design(random.Random(2)))
+
+
+def test_robust_evaluator_promotes_only_nominal_feasible(monkeypatch):
+    import sizeagent.robust as rb
+    from sizeagent.robust import RobustEvaluator
+    from sizeagent.spice import SimResult
+
+    good = SimResult(ok=True, gain_db=70, ugbw_hz=30e6, pm_deg=65, power_uw=100, vout_dc=0.9,
+                     op={"M1": {"vds": 0.5, "vdsat": 0.1}})
+    bad_corner = SimResult(ok=True, gain_db=70, ugbw_hz=30e6, pm_deg=40, power_uw=100, vout_dc=0.9,
+                           op={"M1": {"vds": 0.5, "vdsat": 0.1}})
+    calls = []
+
+    def fake(d, corner="tt", temp=27.0, **kw):
+        calls.append((corner, temp))
+        return good if (corner, temp) == ("tt", 27.0) or fail_at is None else bad_corner
+
+    fail_at = None
+    monkeypatch.setattr(rb, "simulate", fake)
+    ev = RobustEvaluator(budget=50)
+    c, _, _ = ev(random_design(random.Random(1)))
+    assert len(calls) == 1 + len(ev.corners) and ev.trace[-1]["feasible"] and c <= 0.1
+    fail_at = ("ss", 125.0)
+    c2, _, _ = ev(random_design(random.Random(2)))
+    assert not ev.trace[-1]["feasible"] and ev.trace[-1]["nominal_feasible"] and 0.2 < c2 < 1.0
+    assert ev.sims == 2 * (1 + len(ev.corners))
