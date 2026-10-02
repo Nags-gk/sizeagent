@@ -145,7 +145,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 
 fetch("data/results.json").then(r => r.json()).then(D => {
   Chart.defaults.color = css("--muted"); Chart.defaults.borderColor = css("--line");
-  Chart.defaults.font.family = "IBM Plex Sans";
+  Chart.defaults.font.family = "\"IBM Plex Sans\", system-ui, -apple-system, Segoe UI, sans-serif";
   const S = D.meta.spec, B = D.benchmark;
   document.getElementById("space").textContent = D.meta.space_size.toExponential(1).replace("e+", " × 10^");
   document.getElementById("spec").innerHTML = [
