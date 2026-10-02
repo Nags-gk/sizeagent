@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 PROVIDERS = {
     # name: (base_url, api-key env var or None, default model)
-    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY", "gemini-2.5-flash"),
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY", "gemini-3.8-flash"),
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", "llama-3.3-70b-versatile"),
     "ollama": ("http://localhost:11434/v1", None, "qwen2.5:7b"),
 }
