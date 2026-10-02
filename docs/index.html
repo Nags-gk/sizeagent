@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SizeAgent: SKY130 Op-Amp Sizing</title>
+<meta name="description" content="LLM agent, combinatorial optimization and a PyTorch surrogate for transistor sizing of a SKY130 two-stage op-amp, verified in ngspice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbfaf7;--panel:#ffffff;--ink:#1d1f23;--muted:#5d636d;--line:#e3e0d9;--accent:#1a9e6e;--bad:#c2405a;--warn:#c7801c;--chip:#f1efe9;--code:#f4f2ec}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--panel:#1a1d21;--ink:#e8e6e1;--muted:#9aa0a8;--line:#2c3036;--accent:#3cc28f;--bad:#e46a82;--warn:#e0a24a;--chip:#23272d;--code:#1f2328}}
+:root[data-theme="dark"]{--bg:#121417;--panel:#1a1d21;--ink:#e8e6e1;--muted:#9aa0a8;--line:#2c3036;--accent:#3cc28f;--bad:#e46a82;--warn:#e0a24a;--chip:#23272d;--code:#1f2328}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
+h2{font-size:19px;margin:48px 0 6px;font-weight:600}
+p.lead{color:var(--muted);max-width:760px;margin:0 0 18px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 16px;max-width:780px}
+a{color:var(--accent)}
+code,.mono{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 26px}
+.links a{border:1px solid var(--line);padding:6px 12px;border-radius:6px;text-decoration:none;color:var(--ink);background:var(--panel);font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.card .v{font-size:24px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.card .n{font-size:13px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.tablewrap{overflow-x:auto}
+.chart{position:relative;height:340px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.small-chart{position:relative;height:210px}
+.chip{display:inline-block;background:var(--chip);border-radius:5px;padding:1px 7px;font-size:12px;margin:2px 4px 2px 0}
+.ok{color:var(--accent);font-weight:500}.no{color:var(--bad);font-weight:500}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.ctl label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+.ctl select{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px "IBM Plex Mono",monospace}
+.pred{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.step{border-left:3px solid var(--line);padding:4px 0 10px 12px;margin-left:4px}
+.step .t{font-size:12px;color:var(--muted)}
+.step .thought{white-space:pre-wrap;font-size:14px;margin:4px 0}
+.step .res{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--code);padding:6px 8px;border-radius:6px;overflow-x:auto}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+svg text{fill:var(--ink);font:12px "IBM Plex Mono",monospace}
+footer{margin-top:60px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <h1>SizeAgent</h1>
+  <p class="lead">Transistor sizing of a SKY130 two-stage Miller op-amp, treated as a combinatorial optimization problem.
+  Five search strategies and a tool-calling LLM agent compete on the same budget of real ngspice simulations,
+  and the winners are checked across PVT corners and Monte Carlo mismatch.</p>
+  <div class="links">
+    <a href="https://github.com/Nags-gk/sizeagent">Source on GitHub</a>
+    <a href="#try">Try the surrogate model</a>
+    <a href="#agent">Agent trace</a>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <h2>The problem</h2>
+  <p class="sub">SkyWater SKY130 transistor models are binned. Each device group can only use a characterized (W, L) per finger, times an integer multiplier.
+  Together with grids for C<sub>c</sub>, R<sub>z</sub> and the bias current, that makes a discrete search space of <b id="space"></b> sizings.
+  A design meets spec only if every one of these targets is met at once:</p>
+  <div class="panel" id="spec"></div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div class="panel">
+      <svg viewBox="0 0 430 250" width="100%" role="img" aria-label="Two-stage op-amp topology">
+        <rect x="10" y="10" width="410" height="230" rx="8" fill="none" stroke="var(--line)"/>
+        <text x="22" y="34">VDD 1.8 V</text>
+        <rect x="40" y="55" width="140" height="44" rx="6" fill="none" stroke="var(--accent)"/>
+        <text x="52" y="75">M3/M4 PMOS load</text><text x="52" y="91">group load · m3</text>
+        <rect x="40" y="118" width="140" height="44" rx="6" fill="none" stroke="var(--accent)"/>
+        <text x="52" y="138">M1/M2 NMOS pair</text><text x="52" y="154">group inp · m1</text>
+        <rect x="40" y="181" width="140" height="44" rx="6" fill="none" stroke="var(--accent)"/>
+        <text x="52" y="201">M5 tail · M8 bias</text><text x="52" y="217">group bias · m5</text>
+        <rect x="250" y="55" width="150" height="44" rx="6" fill="none" stroke="var(--accent)"/>
+        <text x="262" y="75">M6 PMOS 2nd stage</text><text x="262" y="91">group cs · m6</text>
+        <rect x="250" y="181" width="150" height="44" rx="6" fill="none" stroke="var(--accent)"/>
+        <text x="262" y="201">M7 current sink</text><text x="262" y="217">group bias · m7</text>
+        <line x1="180" y1="140" x2="250" y2="77" stroke="var(--muted)"/>
+        <text x="190" y="128">out1</text>
+        <rect x="262" y="118" width="126" height="44" rx="6" fill="none" stroke="var(--muted)" stroke-dasharray="4 3"/>
+        <text x="272" y="138">Rz + Cc (Miller)</text><text x="272" y="154">out → CL 2 pF</text>
+      </svg>
+    </div>
+    <div class="panel">
+      <b>How each run works</b>
+      <ol style="margin:8px 0 0 18px;padding:0;font-size:14px">
+        <li>An optimizer or the agent proposes a sizing from the discrete space.</li>
+        <li>ngspice runs an open-loop AC testbench. A 1 GH inductor closes the loop at DC to set the bias point.</li>
+        <li>Gain, UGBW, phase margin, power, saturation margin of every transistor, and DC offset are measured.</li>
+        <li>A normalized spec violation is scored. Feasible designs are then ranked by power.</li>
+        <li>Each strategy gets the same SPICE budget, and repeated designs are cached and not counted.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h2>Benchmark: simulations needed to meet spec</h2>
+  <p class="sub">Median best cost so far over seeds, with the interquartile band shaded. Values below 1.0 mean every spec is met. Lower is better.</p>
+  <div class="panel"><div class="chart"><canvas id="bench"></canvas></div></div>
+  <div class="panel tablewrap" style="margin-top:12px"><table id="benchTable"></table>
+  <p class="note">*Median over all seeds. A run that never met spec counts as worse than the budget, so the median reads "&gt;300" when fewer than half the runs succeeded.</p></div>
+
+  <h2 id="agent">LLM agent trace</h2>
+  <p class="sub">The agent reads operating points (gm/I<sub>D</sub>, overdrive, saturation margin) and reasons from first-order design equations.
+  It can hand off to a short simulated-annealing local search (<code>refine</code>) and check PVT corners before it submits.</p>
+  <div class="panel" id="agentBox"></div>
+
+  <h2>Surrogate vs. SPICE</h2>
+  <p class="sub">A PyTorch MLP ensemble trained on SPICE results, scored on held-out designs. Inside the surrogate-assisted GA, the same kind of model screens 400 offspring per generation and only the most promising 10 go to SPICE.</p>
+  <div class="grid3" id="parity"></div>
+  <p class="note" id="surNote"></p>
+
+  <h2 id="try">Try it: live surrogate prediction</h2>
+  <p class="sub">Pick a sizing and the trained ensemble predicts its performance in your browser. These are model predictions, not SPICE results, so check the R² values above before trusting them.</p>
+  <div class="panel">
+    <div class="ctl" id="ctl"></div>
+    <div class="pred" id="pred"></div>
+    <p class="note">Power uses the ideal-mirror estimate P = VDD · I<sub>b</sub> · (1 + m5 + m7), which runs a few percent above SPICE because of channel-length modulation. Everything else is predicted by the model. <b>Reality check:</b> for the default sizing loaded here, SPICE gives 75.3 dB gain, 40.7 MHz UGBW, 60.2° phase margin, 228 µW, a 32 mV saturation margin and a 1.8 mV offset. Comparing those numbers with the predictions shows the size of the model error.</p>
+  </div>
+
+  <h2>Robustness: PVT corners and Monte Carlo</h2>
+  <p class="sub">The best design from each optimizer is re-simulated at 5 process corners (tt, ff, ss, fs, sf) × 3 temperatures (−40, 27, 125 °C), plus 100 mismatch Monte Carlo runs. These designs were optimized at nominal conditions only, so this table shows how much margin each one kept.</p>
+  <div class="panel tablewrap"><table id="pvtTable"></table></div>
+  <div class="panel" style="margin-top:12px"><div class="chart" style="height:260px"><canvas id="mcHist"></canvas></div></div>
+
+  <footer>Built with ngspice 42, the SkyWater SKY130 open PDK (Apache-2.0), PyTorch, Optuna and Chart.js.
+  Source: <a href="https://github.com/Nags-gk/sizeagent">github.com/Nags-gk/sizeagent</a>.</footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (x, d=1) => x == null || Number.isNaN(x) ? "—" : Number(x).toFixed(d);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+fetch("data/results.json").then(r => r.json()).then(D => {
+  Chart.defaults.color = css("--muted"); Chart.defaults.borderColor = css("--line");
+  Chart.defaults.font.family = "IBM Plex Sans";
+  const S = D.meta.spec, B = D.benchmark;
+  document.getElementById("space").textContent = D.meta.space_size.toExponential(1).replace("e+", " × 10^");
+  document.getElementById("spec").innerHTML = [
+    `DC gain ≥ ${S.gain_db} dB`, `UGBW ≥ ${S.ugbw_mhz} MHz`, `Phase margin ≥ ${S.pm_deg}°`,
+    `Power ≤ ${S.power_uw} µW`, `Every transistor saturated, margin ≥ ${S.sat_margin_mv} mV`,
+    `|V<sub>out</sub> − V<sub>cm</sub>| ≤ ${S.vout_err_mv} mV`, `C<sub>L</sub> = 2 pF, VDD = 1.8 V`
+  ].map(t => `<span class="chip">${t}</span>`).join("");
+
+  // cards
+  const algos = Object.keys(B);
+  const bestAlgo = algos.filter(a => B[a].median_first_feasible != null)
+    .sort((a, b) => B[a].median_first_feasible - B[b].median_first_feasible)[0];
+  const rnd = B.random;
+  const cards = [
+    ["Search space", D.meta.space_size.toExponential(1), "discrete sizings"],
+    ["Fastest to spec", bestAlgo ? `${B[bestAlgo].median_first_feasible} sims` : "—", bestAlgo ? `median, ${B[bestAlgo].label}` : ""],
+    ["Random search", rnd ? `${rnd.success}/${rnd.runs}` : "—", rnd ? `runs met spec in ${rnd.budget} sims` : ""],
+  ];
+  if (D.surrogate) {
+    const r2 = Object.values(D.surrogate.metrics).map(m => m.r2);
+    cards.push(["Surrogate R²", `${fmt(Math.min(...r2), 2)}–${fmt(Math.max(...r2), 2)}`, `held-out, ${D.surrogate.n_test} designs`]);
+  }
+  document.getElementById("cards").innerHTML = cards.map(([k, v, n]) =>
+    `<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`).join("");
+
+  // benchmark chart
+  const order = algos.sort((a, b) => (B[a].median_first_feasible ?? 1e9) - (B[b].median_first_feasible ?? 1e9));
+  const ds = [];
+  for (const a of order) {
+    const s = B[a];
+    ds.push({label: s.label, data: s.median_curve.map((y, i) => ({x: i + 1, y})), borderColor: s.color,
+             backgroundColor: s.color, borderWidth: 2, pointRadius: 0, tension: 0});
+  }
+  new Chart(document.getElementById("bench"), {type: "line", data: {datasets: ds}, options: {
+    maintainAspectRatio: false, parsing: false, animation: false,
+    interaction: {mode: "nearest", intersect: false},
+    scales: {x: {type: "linear", title: {display: true, text: "SPICE simulations"}},
+             y: {type: "logarithmic", title: {display: true, text: "best cost so far (median)"}}},
+    plugins: {legend: {position: "bottom", labels: {boxWidth: 12}},
+              tooltip: {callbacks: {label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)}`}}}}});
+  document.getElementById("benchTable").innerHTML =
+    `<tr><th>Strategy</th><th>Met spec</th><th>Median sims to spec*</th><th>Median best power</th><th>Lowest power found</th></tr>` +
+    order.map(a => { const s = B[a]; return `<tr><td><span style="color:${s.color}">●</span> ${s.label}</td>
+      <td>${s.success}/${s.runs}</td><td>${s.median_first_feasible ?? `>${s.budget}`}</td>
+      <td>${s.median_best_power_uw ? fmt(s.median_best_power_uw) + " µW" : "—"}</td>
+      <td>${s.min_best_power_uw ? fmt(s.min_best_power_uw) + " µW" : "—"}</td></tr>`; }).join("");
+
+  // agent trace
+  const box = document.getElementById("agentBox");
+  if (!D.agents || !D.agents.length) {
+    box.innerHTML = `<p style="margin:0">No agent runs recorded yet. Run one locally with a free Gemini key:
+      <br><code>GEMINI_API_KEY=... python -m sizeagent.agent --provider gemini --out results/agent_gemini_1.json</code></p>`;
+  } else {
+    const sel = `<label class="note">Run: <select id="agentSel">${D.agents.map((a, i) =>
+      `<option value="${i}">${esc(a.model)} · spec met at sim ${a.first_feasible_sim ?? "—"} · ${a.sims_used} sims</option>`).join("")}</select></label>`;
+    box.innerHTML = sel + `<div id="agentSteps" style="margin-top:12px"></div>`;
+    const render = i => {
+      const a = D.agents[i];
+      document.getElementById("agentSteps").innerHTML = a.log.map(s => {
+        const r = s.result, m = r.metrics || {};
+        const line = r.error ? `error: ${esc(r.error)}` :
+          s.tool === "verify_pvt" ? `PVT pass ${r.pass_count}/${r.total}; worst ${esc(JSON.stringify(r.worst_case))}` :
+          s.tool === "submit" ? "submitted" :
+          `gain ${fmt(m.gain_db)} dB · UGBW ${fmt(m.ugbw_mhz)} MHz · PM ${fmt(m.pm_deg)}° · ${fmt(m.power_uw)} µW · sat ${fmt(m.min_sat_margin_mv, 0)} mV` +
+          (r.meets_spec ? ` · <span class="ok">meets spec</span>` : r.violations ? ` · <span class="no">misses ${Object.keys(r.violations).join(", ")}</span>` : "");
+        return `<div class="step"><div class="t">turn ${s.turn} · <b>${s.tool}</b> · sims ${s.sims_before}→${s.sims_after}</div>
+          ${s.thought ? `<div class="thought">${esc(s.thought)}</div>` : ""}<div class="res">${line}</div></div>`;
+      }).join("") + (a.rationale ? `<p class="note"><b>Rationale:</b> ${esc(a.rationale)}</p>` : "");
+    };
+    document.getElementById("agentSel").onchange = e => render(+e.target.value);
+    render(0);
+  }
+
+  // parity plots
+  if (D.surrogate) {
+    const P = document.getElementById("parity");
+    for (const [k, m] of Object.entries(D.surrogate.metrics)) {
+      const div = document.createElement("div"); div.className = "panel";
+      div.innerHTML = `<div style="font-size:13px"><b>${m.label}</b> <span class="note">R² ${fmt(m.r2, 3)}</span></div><div class="small-chart"><canvas></canvas></div>`;
+      P.appendChild(div);
+      const pts = m.true.map((t, i) => ({x: t, y: m.pred[i]}));
+      const lo = Math.min(...m.true, ...m.pred), hi = Math.max(...m.true, ...m.pred);
+      new Chart(div.querySelector("canvas"), {type: "scatter", data: {datasets: [
+        {data: pts, backgroundColor: css("--accent") + "88", pointRadius: 2},
+        {type: "line", data: [{x: lo, y: lo}, {x: hi, y: hi}], borderColor: css("--muted"), borderWidth: 1, pointRadius: 0}]},
+        options: {maintainAspectRatio: false, animation: false, plugins: {legend: {display: false}, tooltip: {enabled: false}},
+          scales: {x: {title: {display: true, text: "SPICE"}}, y: {title: {display: true, text: "predicted"}}}}});
+    }
+    document.getElementById("surNote").textContent =
+      `${D.surrogate.n_converged} SPICE-converged designs (uniform random samples plus perturbations around good designs); 80/20 split.`;
+  }
+
+  // live predictor
+  if (D.model) setupPredictor(D.model, S);
+
+  // PVT
+  if (D.pvt) {
+    const rows = Object.entries(D.pvt);
+    document.getElementById("pvtTable").innerHTML =
+      `<tr><th>Best design from</th><th>Nominal power</th><th>Corners passing</th><th>Worst gain</th><th>Worst UGBW</th><th>Worst PM</th><th>Offset σ (MC)</th></tr>` +
+      rows.map(([a, r]) => `<tr><td>${B[a] ? B[a].label : a}</td><td>${fmt(r.nominal.power_uw)} µW</td>
+        <td class="${r.corners.pass_count === r.corners.total ? "ok" : "no"}">${r.corners.pass_count}/${r.corners.total}</td>
+        <td>${fmt(r.corners.worst.gain_db)} dB</td><td>${fmt(r.corners.worst.ugbw_mhz)} MHz</td><td>${fmt(r.corners.worst.pm_deg)}°</td>
+        <td>${fmt(r.mc.offset_sigma_mv, 2)} mV</td></tr>`).join("");
+    const [a0, r0] = rows.sort((x, y) => y[1].corners.pass_count - x[1].corners.pass_count)[0];
+    const v = r0.mc.offset_mv, lo = Math.floor(Math.min(...v)), hi = Math.ceil(Math.max(...v));
+    const bins = 24, w = (hi - lo) / bins || 1, counts = Array(bins).fill(0);
+    v.forEach(x => counts[Math.min(bins - 1, Math.floor((x - lo) / w))]++);
+    new Chart(document.getElementById("mcHist"), {type: "bar", data: {
+      labels: counts.map((_, i) => (lo + (i + .5) * w).toFixed(1)),
+      datasets: [{data: counts, backgroundColor: css("--accent")}]},
+      options: {maintainAspectRatio: false, animation: false, plugins: {legend: {display: false},
+        title: {display: true, text: `Monte Carlo output offset, ${B[a0] ? B[a0].label : a0} design (n=${v.length}, σ=${fmt(r0.mc.offset_sigma_mv, 2)} mV)`}},
+        scales: {x: {title: {display: true, text: "Vout − 0.9 V (mV)"}}, y: {title: {display: true, text: "runs"}}}}});
+  }
+}).catch(e => { document.getElementById("cards").textContent = "Could not load results: " + e; });
+
+function setupPredictor(M, S) {
+  const ctl = document.getElementById("ctl");
+  const groups = Object.keys(M.groups);
+  const label = {inp: "Input pair M1/M2", load: "Load M3/M4", bias: "Bias M5/M7/M8", cs: "2nd stage M6"};
+  const defaults = {inp: [3, 0.5], load: [3, 1], bias: [3, 1], cs: [5, 0.5]};
+  const sel = (id, lab, opts, def) => {
+    const o = opts.map(([v, t]) => `<option value="${v}" ${v === def ? "selected" : ""}>${t}</option>`).join("");
+    return `<div><label for="${id}">${lab}</label><select id="${id}">${o}</select></div>`;
+  };
+  let html = "";
+  for (const g of groups) {
+    const geos = M.geometries[M.groups[g]];
+    let di = 0, best = 1e9;
+    geos.forEach(([w, l], i) => { const d = Math.abs(Math.log(w / defaults[g][0])) + 2 * Math.abs(Math.log(l / defaults[g][1])); if (d < best) { best = d; di = i; } });
+    html += sel(`g_${g}`, `${label[g]} W/L (µm)`, geos.map(([w, l], i) => [String(i), `${w} / ${l}`]), String(di));
+  }
+  const multDef = {m1: 4, m3: 2, m5: 4, m6: 8, m7: 8};
+  for (const k of ["m1", "m3", "m5", "m6", "m7"]) html += sel(k, `Multiplier ${k}`, M.mult.map(m => [String(m), String(m)]), String(multDef[k]));
+  html += sel("cc", "Cc (pF)", M.cc_pf.map(v => [String(v), String(v)]), "1");
+  html += sel("rz", "Rz (kΩ)", M.rz_kohm.map(v => [String(v), String(v)]), "2");
+  html += sel("ib", "Ibias (µA)", M.ib_ua.map(v => [String(v), String(v)]), "10");
+  ctl.innerHTML = html;
+  const forward = (net, x) => { let h = x; net.forEach((L, li) => { h = L.W.map((row, j) => row.reduce((s, w, k) => s + w * h[k], L.b[j]));
+      if (li < net.length - 1) h = h.map(z => z / (1 + Math.exp(-z))); }); return h; };
+  const update = () => {
+    const x = [];
+    for (const g of groups) { const [w, l] = M.geometries[M.groups[g]][+document.getElementById(`g_${g}`).value]; x.push(Math.log(w), Math.log(l)); }
+    const m = {}; for (const k of ["m1", "m3", "m5", "m6", "m7"]) { m[k] = +document.getElementById(k).value; x.push(Math.log(m[k])); }
+    const cc = +document.getElementById("cc").value, rz = +document.getElementById("rz").value, ib = +document.getElementById("ib").value;
+    x.push(Math.log(cc), rz / 10, Math.log(ib));
+    const xn = x.map((v, i) => (v - M.xm[i]) / M.xs[i]);
+    const outs = M.nets.map(n => forward(n, xn).map((v, i) => v * M.ys[i] + M.ym[i]));
+    const y = outs[0].map((_, i) => outs.reduce((s, o) => s + o[i], 0) / outs.length);
+    const power = 1.8 * ib * (1 + m.m5 + m.m7);
+    const vals = [
+      ["DC gain", y[0], "dB", y[0] >= S.gain_db, 1], ["UGBW", 10 ** y[1], "MHz", 10 ** y[1] >= S.ugbw_mhz, 1],
+      ["Phase margin", y[2], "°", y[2] >= S.pm_deg, 1], ["Power (ideal mirror)", power, "µW", power <= S.power_uw, 0],
+      ["Min sat. margin", y[4] * 1e3, "mV", y[4] * 1e3 >= S.sat_margin_mv, 0], ["|Vout − Vcm|", Math.abs(y[5]) * 1e3, "mV", Math.abs(y[5]) * 1e3 <= S.vout_err_mv, 0]];
+    document.getElementById("pred").innerHTML = vals.map(([k, v, u, ok, d]) =>
+      `<div class="card"><div class="k">${k}</div><div class="v ${ok ? "ok" : "no"}">${fmt(v, d)} <span style="font-size:14px">${u}</span></div><div class="n">${ok ? "meets spec" : "misses spec"}</div></div>`).join("");
+  };
+  ctl.addEventListener("change", update); update();
+}
+</script>
+</body>
+</html>

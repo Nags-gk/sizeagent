@@ -1,0 +1,16 @@
+[project]
+name = "sizeagent"
+version = "0.1.0"
+description = "LLM agent + combinatorial optimization for SKY130 op-amp sizing with ngspice"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+dependencies = ["numpy", "torch", "optuna", "matplotlib"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+packages = ["sizeagent", "sizeagent.optimizers", "sizeagent.agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

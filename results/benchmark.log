@@ -1,0 +1,108 @@
+       random seed=0 first_feasible=92 best_cost=0.067 (388.1s)
+           ga seed=0 first_feasible=94 best_cost=0.037 (467.2s)
+           sa seed=0 first_feasible=None best_cost=1.168 (475.0s)
+[W 2026-10-01 21:18:12,011] Trial 300 failed with parameters: {'g0': 39, 'g1': 11, 'g2': 40, 'g3': 39, 'g4': 3, 'g5': 10, 'g6': 6, 'g7': 10, 'g8': 15, 'g9': 6, 'g10': 3, 'g11': 1} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 21:18:12,013] Trial 300 failed with value None.
+          tpe seed=0 first_feasible=None best_cost=1.186 (435.5s)
+       random seed=1 first_feasible=None best_cost=1.293 (231.5s)
+ surrogate_ga seed=0 first_feasible=72 best_cost=0.029 (326.5s)
+           ga seed=1 first_feasible=138 best_cost=0.045 (227.2s)
+           sa seed=1 first_feasible=251 best_cost=0.050 (252.6s)
+[W 2026-10-01 21:29:37,505] Trial 300 failed with parameters: {'g0': 33, 'g1': 32, 'g2': 22, 'g3': 3, 'g4': 15, 'g5': 11, 'g6': 5, 'g7': 12, 'g8': 15, 'g9': 4, 'g10': 7, 'g11': 1} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 21:29:37,506] Trial 300 failed with value None.
+          tpe seed=1 first_feasible=None best_cost=1.028 (226.7s)
+ surrogate_ga seed=1 first_feasible=63 best_cost=0.024 (304.1s)
+       random seed=2 first_feasible=None best_cost=1.076 (252.4s)
+           ga seed=2 first_feasible=75 best_cost=0.026 (521.2s)
+           sa seed=2 first_feasible=273 best_cost=0.029 (481.5s)
+[W 2026-10-01 21:46:00,856] Trial 300 failed with parameters: {'g0': 36, 'g1': 26, 'g2': 20, 'g3': 30, 'g4': 15, 'g5': 9, 'g6': 2, 'g7': 6, 'g8': 12, 'g9': 4, 'g10': 3, 'g11': 5} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 21:46:00,857] Trial 300 failed with value None.
+          tpe seed=2 first_feasible=None best_cost=1.002 (304.1s)
+ surrogate_ga seed=2 first_feasible=52 best_cost=0.025 (429.1s)
+       random seed=3 first_feasible=None best_cost=1.187 (308.2s)
+           ga seed=3 first_feasible=77 best_cost=0.043 (492.2s)
+           sa seed=3 first_feasible=156 best_cost=0.065 (467.8s)
+[W 2026-10-01 22:03:42,704] Trial 300 failed with parameters: {'g0': 44, 'g1': 25, 'g2': 16, 'g3': 9, 'g4': 5, 'g5': 13, 'g6': 12, 'g7': 13, 'g8': 6, 'g9': 6, 'g10': 5, 'g11': 2} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 22:03:42,705] Trial 300 failed with value None.
+          tpe seed=3 first_feasible=111 best_cost=0.060 (390.0s)
+ surrogate_ga seed=3 first_feasible=63 best_cost=0.023 (545.5s)
+       random seed=4 first_feasible=105 best_cost=0.057 (333.0s)
+           ga seed=4 first_feasible=88 best_cost=0.033 (408.7s)
+           sa seed=4 first_feasible=83 best_cost=0.035 (393.9s)
+[W 2026-10-01 22:21:50,274] Trial 300 failed with parameters: {'g0': 24, 'g1': 25, 'g2': 50, 'g3': 39, 'g4': 15, 'g5': 13, 'g6': 11, 'g7': 8, 'g8': 9, 'g9': 9, 'g10': 6, 'g11': 1} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 22:21:50,275] Trial 300 failed with value None.
+          tpe seed=4 first_feasible=31 best_cost=0.039 (419.3s)
+ surrogate_ga seed=4 first_feasible=105 best_cost=0.036 (451.0s)
+       random seed=5 first_feasible=None best_cost=1.476 (297.3s)
+           ga seed=5 first_feasible=97 best_cost=0.038 (489.5s)
+           sa seed=5 first_feasible=119 best_cost=0.040 (479.2s)
+[W 2026-10-01 22:39:28,055] Trial 300 failed with parameters: {'g0': 51, 'g1': 43, 'g2': 46, 'g3': 11, 'g4': 1, 'g5': 13, 'g6': 15, 'g7': 15, 'g8': 12, 'g9': 4, 'g10': 5, 'g11': 2} because of the following error: BudgetExceeded().
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/dist-packages/optuna/study/_optimize.py", line 206, in _run_trial
+    value_or_values = func(trial)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 84, in objective
+    return _f(ev, v)
+  File "/home/claude/sizeagent/sizeagent/optimizers/search.py", line 13, in _f
+    return ev(decode(v))[0]
+           ~~^^^^^^^^^^^
+  File "/home/claude/sizeagent/sizeagent/specs.py", line 80, in __call__
+    raise BudgetExceeded
+sizeagent.specs.BudgetExceeded
+[W 2026-10-01 22:39:28,056] Trial 300 failed with value None.
+          tpe seed=5 first_feasible=47 best_cost=0.056 (478.0s)
+ surrogate_ga seed=5 first_feasible=67 best_cost=0.026 (329.9s)

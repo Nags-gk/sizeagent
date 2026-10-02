@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.pdk_src/
+pdk_models/
+results/old_*
+*.egg-info/
+.env

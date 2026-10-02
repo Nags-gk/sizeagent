@@ -1,0 +1,11 @@
+      gain_db: R2=0.811  MAE=6.5759
+     log_ugbw: R2=0.755  MAE=0.4025
+       pm_deg: R2=0.686  MAE=15.1657
+    log_power: R2=0.973  MAE=0.0314
+ sat_margin_v: R2=0.858  MAE=0.0427
+   vout_err_v: R2=0.732  MAE=0.0674
+           ga: corners pass 8/15, worst PM 60.5, offset sigma 1.36 mV
+       random: corners pass 7/15, worst PM 64.5, offset sigma 2.71 mV
+           sa: corners pass 2/15, worst PM 65.4, offset sigma 11.64 mV
+ surrogate_ga: corners pass 10/15, worst PM 53.2, offset sigma 2.48 mV
+          tpe: corners pass 10/15, worst PM 98.1, offset sigma 3.83 mV
