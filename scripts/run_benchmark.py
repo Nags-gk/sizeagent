@@ -3,7 +3,10 @@
 Each (algorithm, seed) run gets the same SPICE budget. Reports simulations to
 first spec-meeting design and the best feasible power found.
 """
-import argparse, json, sys, time
+import argparse
+import json
+import sys
+import time
 from multiprocessing import Pool
 from pathlib import Path
 

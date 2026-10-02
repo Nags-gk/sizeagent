@@ -6,3 +6,7 @@ pdk_models/
 results/old_*
 *.egg-info/
 .env
+.venv/
+.ruff_cache/
+.mypy_cache/
+.coverage

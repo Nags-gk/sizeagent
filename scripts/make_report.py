@@ -1,10 +1,13 @@
 """Aggregate results/ into docs/data/*.json for the GitHub Pages dashboard and
 render static PNG figures for the README."""
-import json, statistics, sys
+import json
+import statistics
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402

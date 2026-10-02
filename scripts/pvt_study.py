@@ -1,5 +1,6 @@
 """PVT corner sweep and Monte Carlo mismatch for the best design of each optimizer."""
-import json, sys
+import json
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

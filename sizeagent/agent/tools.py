@@ -1,8 +1,18 @@
 """Tools the sizing agent can call. Each returns a JSON-serializable dict."""
 from __future__ import annotations
 
-from ..circuit import (CC_PF, GROUPS, IB_UA, MULT_CHOICES, MULT_KEYS, RZ_KOHM, Design,
-                       nearest_geometry, snap, valid_geometries)
+from ..circuit import (
+    CC_PF,
+    GROUPS,
+    IB_UA,
+    MULT_CHOICES,
+    MULT_KEYS,
+    RZ_KOHM,
+    Design,
+    nearest_geometry,
+    snap,
+    valid_geometries,
+)
 from ..optimizers import decode, encode
 from ..optimizers.search import local_search
 from ..pvt import corner_sweep

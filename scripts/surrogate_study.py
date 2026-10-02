@@ -4,7 +4,10 @@ Builds a dataset of SPICE-simulated designs (uniform random samples plus local
 perturbations around good designs found by the benchmark), trains the MLP
 ensemble on 80%, and reports held-out accuracy per metric.
 """
-import argparse, json, random, sys
+import argparse
+import json
+import random
+import sys
 from multiprocessing import Pool
 from pathlib import Path
 

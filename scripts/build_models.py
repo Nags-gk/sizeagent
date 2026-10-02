@@ -6,7 +6,10 @@ way open_pdks does for ngspice:
   * move the in-subckt `.param` defaults onto the `.subckt` line, and
   * pass the `mult` instance parameter through to the BSIM4 device as `m`.
 """
-import csv, json, re, sys
+import csv
+import json
+import re
+import sys
 from pathlib import Path
 
 DEVICES = ["nfet_01v8", "pfet_01v8"]

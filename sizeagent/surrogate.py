@@ -16,7 +16,7 @@ torch.set_num_threads(1)
 from torch import nn
 
 from .circuit import GROUPS, MULT_KEYS, Design
-from .optimizers import cardinality, decode, encode, mutate_gene, random_vector, run_safely
+from .optimizers import cardinality, decode, mutate_gene, random_vector, run_safely
 from .specs import Evaluator, Spec, violations
 
 TARGETS = ["gain_db", "log_ugbw", "pm_deg", "log_power", "sat_margin_v", "vout_err_v"]

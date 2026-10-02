@@ -7,10 +7,21 @@ license = {text = "Apache-2.0"}
 dependencies = ["numpy", "torch", "optuna", "matplotlib"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pytest-cov", "ruff", "scipy"]
+
+[project.scripts]
+sizeagent-agent = "sizeagent.agent.loop:main"
 
 [tool.setuptools]
 packages = ["sizeagent", "sizeagent.optimizers", "sizeagent.agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B007", "B905", "E402", "E702", "E401", "E741", "B023", "UP037"]

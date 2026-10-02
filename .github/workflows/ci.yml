@@ -1,12 +1,22 @@
 name: ci
 on: [push, pull_request]
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
+      - run: pip install ruff && ruff check .
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "${{ matrix.python }}"}
       - name: Install ngspice
         run: sudo apt-get update && sudo apt-get install -y ngspice
       - name: Cache SKY130 models
@@ -17,4 +27,4 @@ jobs:
       - name: Install Python deps
         run: pip install --index-url https://download.pytorch.org/whl/cpu torch && pip install -e .[dev]
       - name: Test
-        run: pytest -q
+        run: pytest -q --cov=sizeagent

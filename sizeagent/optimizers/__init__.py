@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import math
 import random
-from functools import lru_cache
+from functools import cache
 
-from ..circuit import (CC_PF, GROUPS, IB_UA, MULT_CHOICES, MULT_KEYS, RZ_KOHM, Design,
-                       random_design, valid_geometries)
+from ..circuit import CC_PF, GROUPS, IB_UA, MULT_CHOICES, MULT_KEYS, RZ_KOHM, Design, random_design, valid_geometries
 from ..specs import BudgetExceeded, Evaluator
 
 # Genome: 4 geometry genes, 5 multiplier genes, Cc, Rz, Ibias (all integer indices).
@@ -52,7 +51,7 @@ def decode(v: list[int]) -> Design:
     return Design(geo=geo, mult=mult, cc=CC_PF[v[9]], rz=RZ_KOHM[v[10]], ib=IB_UA[v[11]])
 
 
-@lru_cache(maxsize=None)
+@cache
 def geo_neighbors(dev: str, k: int = 6) -> list[list[int]]:
     """k nearest characterized geometries in log(W, L) space, per geometry."""
     pairs = valid_geometries()[dev]

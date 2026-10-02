@@ -5,8 +5,8 @@ from __future__ import annotations
 import math
 import random
 
-from . import cardinality, decode, mutate_gene, random_vector, run_safely
 from ..specs import Evaluator
+from . import cardinality, decode, mutate_gene, random_vector, run_safely
 
 
 def _f(ev: Evaluator, v: list[int]) -> float:
