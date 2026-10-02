@@ -39,6 +39,27 @@ Rules: you have a budget of {budget} simulations. Think briefly before each tool
 `verify_pvt` and then `submit`. Always submit before the budget runs out."""
 
 
+def compact(messages: list[dict], keep: int = 4) -> list[dict]:
+    """Shrink older tool results (drop operating points and design echoes) so the
+    prompt stays small on token-limited tiers. Call/response pairing is untouched."""
+    tool_idx = [i for i, m in enumerate(messages) if m["role"] == "tool"]
+    old = set(tool_idx[:-keep]) if len(tool_idx) > keep else set()
+    out = []
+    for i, m in enumerate(messages):
+        if i in old:
+            try:
+                r = json.loads(m["content"])
+                brief = {k: r[k] for k in ("metrics", "violations", "meets_spec", "pass_count", "error",
+                                           "failing_corners") if k in r}
+                if "design" in r:
+                    brief["design"] = r["design"]
+                m = {**m, "content": json.dumps(brief)}
+            except (json.JSONDecodeError, TypeError):
+                pass
+        out.append(m)
+    return out
+
+
 def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 150,
               max_turns: int = 40, spec: Spec | None = None, out: str | None = None,
               client=None, verbose: bool = True) -> dict:
@@ -48,10 +69,16 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
     client = client or ChatClient(provider, model)
     messages = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
                 {"role": "user", "content": "Size the op-amp to meet the spec with as few simulations as possible."}]
-    log = []
+    log, api_error = [], None
     t0 = time.time()
     for turn in range(max_turns):
-        msg = client.chat(messages, TOOL_SPECS)
+        try:
+            msg = client.chat(compact(messages), TOOL_SPECS)
+        except RuntimeError as e:      # quota or network failure: keep what we have
+            api_error = str(e)[:300]
+            if verbose:
+                print(f"[{turn}] stopping: {api_error}")
+            break
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content") or "", **({"tool_calls": calls} if calls else {})})
         if msg.get("content") and verbose:
@@ -82,7 +109,7 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
     summary = {"provider": provider, "model": getattr(client, "model", None), "budget": budget,
                "sims_used": ev.sims, "first_feasible_sim": ev.first_feasible(),
                "best": best, "submitted": final, "rationale": tools.rationale,
-               "turns": len({x["turn"] for x in log}), "wall_s": round(time.time() - t0, 1),
+               "turns": len({x["turn"] for x in log}), "api_error": api_error, "wall_s": round(time.time() - t0, 1),
                "log": log, "trace": ev.trace}
     if out:
         Path(out).parent.mkdir(parents=True, exist_ok=True)

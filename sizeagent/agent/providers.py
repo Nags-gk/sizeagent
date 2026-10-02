@@ -15,7 +15,7 @@ from dataclasses import dataclass
 PROVIDERS = {
     # name: (base_url, api-key env var or None, default model)
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY", "gemini-3.8-flash"),
-    "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", "llama-3.3-70b-versatile"),
+    "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", "openai/gpt-oss-120b"),
     "ollama": ("http://localhost:11434/v1", None, "qwen2.5:7b"),
 }
 
@@ -40,6 +40,7 @@ class ChatClient:
                            "tool_choice": "auto", "temperature": self.temperature}).encode()
         req = urllib.request.Request(f"{self.base}/chat/completions", data=body, method="POST",
                                      headers={"Content-Type": "application/json",
+                                              "User-Agent": "sizeagent/0.1 (+https://github.com/Nags-gk/sizeagent)",
                                               "Authorization": f"Bearer {self.key}"})
         delay = 5.0
         for attempt in range(self.max_retries):

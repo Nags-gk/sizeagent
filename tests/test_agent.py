@@ -38,3 +38,26 @@ def test_unknown_tool_and_bad_args_are_reported():
     t = AgentTools(Evaluator(budget=5))
     assert "error" in t.call("rm_rf", {})
     assert "error" in t.call("simulate", {"design": {"inp_w": 1}})
+
+
+def test_compact_shrinks_old_tool_results_only():
+    from sizeagent.agent.loop import compact
+    big = json.dumps({"metrics": {"gain_db": 1}, "operating_point": {"M1": "x" * 5000}, "meets_spec": False})
+    msgs = [{"role": "system", "content": "s"}] + [{"role": "tool", "content": big} for _ in range(6)]
+    out = compact(msgs, keep=2)
+    assert all("operating_point" not in m["content"] for m in out[1:5])
+    assert all("operating_point" in m["content"] for m in out[5:])
+    assert len(msgs) == len(out)
+
+
+def test_api_failure_keeps_partial_results(tmp_path):
+    class Dying(FakeClient):
+        def chat(self, messages, tools):
+            if not self.script:
+                raise RuntimeError("quota")
+            return super().chat(messages, tools)
+
+    c = Dying()
+    c.script = c.script[:1]
+    s = run_agent(client=c, budget=10, out=str(tmp_path / "r.json"), verbose=False)
+    assert s["api_error"] == "quota" and s["sims_used"] == 1 and (tmp_path / "r.json").exists()
