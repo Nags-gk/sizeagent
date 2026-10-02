@@ -32,19 +32,19 @@ SkyWater SKY130 MOSFET models are *binned*: only characterized per-finger (W, L)
 
 ## Results
 
-Each strategy gets the same budget of **300 unique SPICE simulations**, run over 6 seeds. Repeated designs are cached and not counted.
+Each strategy gets the same budget of **300 unique SPICE simulations**, run over **20 seeds**. Repeated designs are cached and not counted. Intervals are 95% (Wilson for success rate, bootstrap for the median). Regenerate with `python scripts/stats.py`.
 
-| Strategy | Met spec (of 6) | Median sims to spec* | Median best power | Lowest power |
+| Strategy | Met spec (of 20) | Median sims to spec* | Median best power (feasible runs) | Lowest power |
 |---|---|---|---|---|
-| Surrogate-assisted GA | 6/6 | 65.0 | 63.7 µW | 57.4 µW |
-| Genetic algorithm | 6/6 | 91.0 | 93.8 µW | 64.6 µW |
-| Simulated annealing | 5/6 | 203.5 | 99.2 µW | 73.4 µW |
-| Random search | 2/6 | >300 | 155.1 µW | 142.6 µW |
-| Bayesian opt. (TPE) | 3/6 | >300 | 139.4 µW | 97.7 µW |
+| Surrogate-assisted GA | 20/20 (84-100%) | 62 (58-69) | 68.2 µW | 57.2 µW |
+| Genetic algorithm | 19/20 (76-99%) | 98 (89-126) | 98.8 µW | 64.6 µW |
+| Simulated annealing | 16/20 (58-92%) | 216 (158-268) | 94.3 µW | 69.9 µW |
+| Bayesian opt. (TPE) | 9/20 (26-66%) | >300 | 118.1 µW | 59.9 µW |
+| Random search | 4/20 (8-42%) | >300 | 155.1 µW | 120.8 µW |
 
-\*Median over all seeds, counting a failed run as >300.
+\*Median over all seeds, counting a failed run as >300 (right-censored at budget + 1).
 
-The surrogate-assisted GA met spec in every seed. It needed a median of 65 simulations, versus 91 for the plain GA, and found the lowest-power designs (median 63.7 µW). Uniform random search met spec in only 2 of 6 seeds.
+The surrogate-assisted GA met spec in every seed and needed about a third fewer simulations than the plain GA (Mann-Whitney p = 0.0002), and about 3.5x fewer than simulated annealing (p < 0.0001). Plain GA vs. TPE and random search are also significant (p = 0.008 and p < 0.0001). Random search vs. TPE and TPE vs. SA are not (p = 0.12, 0.55).
 
 Surrogate vs. SPICE on held-out designs:
 
@@ -61,9 +61,9 @@ Surrogate vs. SPICE on held-out designs:
 
 1600 training and 400 test designs. Accuracy is moderate: phase margin is hardest (R² 0.69). That is why the surrogate only *ranks* candidates and every reported number comes from SPICE.
 
-**Robustness check.** The best design from each method was re-simulated at 5 corners × 3 temperatures, plus 100 mismatch Monte Carlo runs:
+**Robustness check.** The best design from each nominal-only run was re-simulated at 5 corners x 3 temperatures (15 total), plus 100 mismatch Monte Carlo runs (6-seed study; single best design per method):
 
-| Best design from | Corners passing | Offset σ (MC) |
+| Best design from | Corners passing | Offset sigma (MC) |
 |---|---|---|
 | Genetic algorithm | 8/15 | 1.36 mV |
 | Random search | 7/15 | 2.71 mV |
@@ -71,13 +71,25 @@ Surrogate vs. SPICE on held-out designs:
 | Surrogate-assisted GA | 10/15 | 2.48 mV |
 | Bayesian opt. (TPE) | 10/15 | 3.83 mV |
 
-None of the nominal-only optima pass all 15 PVT corners. Optimizing at tt/27 °C pushes each design to the edge of the spec, which is exactly why industrial flows optimize worst-case over corners. Corner-aware optimization is the next step for this repo.
+None of the nominal-only optima pass all 15 corners: optimizing at tt/27 C pushes designs to the edge of the spec.
+
+### Corner-aware optimization
+
+`sizeagent/robust.py` adds a `RobustEvaluator`. A design is simulated at tt/27 C first; only nominally feasible designs are promoted to 6 extreme corners (ss and ff at -40/125 C, plus fs and sf at 27 C). A design counts as feasible only if it meets spec at all of them, and **every corner simulation is charged to the same budget**. Budget here is 600 simulations, 6 seeds, and the final design of every run is checked on the full 15-corner grid (`python scripts/robust_study.py`).
+
+| Strategy | Robust-feasible runs | Median sims to robust spec | Full 15-corner grid passes (per seed) | Median power (feasible) |
+|---|---|---|---|---|
+| Surrogate-assisted GA | 6/6 | 113 | 15, 14, 14, 15, 14, 15 | 96 µW |
+| Genetic algorithm | 4/6 | 305 | 14, 13, 14, 14, 15, 3 | 136 µW |
+| Simulated annealing | 3/6 | 591 | 15, 5, 15, 15, 14, 7 | 185 µW |
+
+Corner-aware search lifts the surrogate-assisted GA from 10/15 corners (nominal-only) to 14-15/15 on every seed, at roughly 2x the simulation count and about 1.4x the power of the nominal optimum. It is still not a guarantee: the optimizer sees 7 of the 15 grid points, and three of the six surrogate-GA designs fail one unseen grid point. Adding that point (or all 15) to the evaluator is the obvious next step.
 
 ### Honest caveats
 - Only the transistors use foundry models. C<sub>c</sub>, R<sub>z</sub> and C<sub>L</sub> are ideal elements, and there are no layout parasitics.
-- Optimization runs at the tt corner, 27 °C. The PVT table shows how much margin each nominal optimum keeps; robust (worst-case) optimization isn't implemented yet.
+- The default benchmark optimizes at tt, 27 °C; the corner-aware study above covers 7 of the 15 grid points and 6 seeds, not a formal worst-case guarantee.
 - Phase margin and UGBW come from an open-loop AC analysis. There's no transient, slew-rate or noise analysis yet.
-- Benchmarks are 6 seeds per method. Expect the spread you see in the IQR band.
+- The main benchmark uses 20 seeds per method; the robust and PVT studies use 6, so their conclusions are indicative, not statistically tight.
 
 ## Run it
 
@@ -86,8 +98,10 @@ sudo apt-get install ngspice              # ngspice 42 tested
 ./scripts/setup_pdk.sh                    # ~10 MB of SKY130 SPICE models
 pip install -e .[dev] && pytest -q
 
-python scripts/run_benchmark.py --seeds 6 --budget 300
+python scripts/run_benchmark.py --seeds 20 --budget 300
 python scripts/surrogate_study.py && python scripts/pvt_study.py
+python scripts/robust_study.py            # corner-aware optimization
+python scripts/stats.py                   # CIs and significance tests
 python scripts/make_report.py             # -> docs/data/results.json, docs/img/*.png
 
 # LLM agent (free Gemini key from https://aistudio.google.com/apikey)
