@@ -75,3 +75,18 @@ def test_corner_sweep_all_failing(monkeypatch):
 def test_monte_carlo_reports_spread():
     r = pvt.monte_carlo(reference_design(), n=10, workers=1)
     assert r["n"] == 10 and r["offset_sigma_mv"] > 0
+
+
+def test_robust_evaluator_never_drops_charged_sims():
+    nominal = Evaluator(budget=300)
+    ALGORITHMS["random"](nominal, seed=1)
+    feas = next(r for r in nominal.trace if r["feasible"])
+    from sizeagent.agent.tools import design_from_args
+    d = design_from_args(feas["design"])
+    ev = robust.RobustEvaluator(budget=3)               # nominal feasible, but 6 corners do not fit
+    c, _, _ = ev(d)
+    assert ev.sims == 1 and len(ev.trace) == 1 and ev.trace[0]["unverified"] and not ev.trace[0]["feasible"]
+    assert 0.1 < c < 1.0
+    ev2 = robust.RobustEvaluator(budget=200)
+    ev2(d)
+    assert ev2.sims >= 1 + len(ev2.corners) and not ev2.trace[0]["unverified"]

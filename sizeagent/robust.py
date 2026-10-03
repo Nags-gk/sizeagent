@@ -37,6 +37,17 @@ class RobustEvaluator(Evaluator):
             total += sum(violations(mc, self.spec).values()) if mc else 100.0
         return total
 
+    def _promote(self, d: Design) -> float | None:
+        """Total violation over the corner tiers, or None if the budget cannot cover them."""
+        if self.sims + len(self.corners) > self.budget:
+            return None
+        total = self._sweep(d, self.corners)
+        if total == 0 and self.rest:
+            if self.sims + len(self.rest) > self.budget:
+                return None
+            total = self._sweep(d, self.rest)
+        return total
+
     def __call__(self, d: Design) -> tuple[float, dict | None, SimResult | None]:
         k = d.key()
         if k in self.cache:
@@ -47,22 +58,20 @@ class RobustEvaluator(Evaluator):
         self.sims += 1
         m = r.metrics() if r.ok else None
         c_nom = cost(m, self.spec)
-        robust_ok, c = False, c_nom
+        robust_ok, c, unverified = False, c_nom, False
         if m is not None and c_nom <= 0.1:
-            if self.sims + len(self.corners) > self.budget:
-                raise BudgetExceeded
-            total = self._sweep(d, self.corners)
-            if total == 0 and self.rest:
-                if self.sims + len(self.rest) > self.budget:
-                    raise BudgetExceeded
-                total = self._sweep(d, self.rest)
-            if total == 0:
+            total = self._promote(d)
+            if total is None:
+                # Budget ended mid-verification: keep the sims already charged in the trace as
+                # an unverified design instead of silently dropping them.
+                unverified, c = True, 0.55
+            elif total == 0:
                 robust_ok, c = True, c_nom        # in [0, 0.1]
             else:
                 c = 0.2 + 0.7 * total / (1.0 + total)   # between nominal-feasible and infeasible
         best = min([row["cost"] for row in self.trace] + [c])
         self.trace.append({"sim": self.sims, "cost": c, "best_cost": best, "feasible": robust_ok,
-                           "nominal_feasible": c_nom <= 0.1, "metrics": m, "design": d.to_dict(),
+                           "nominal_feasible": c_nom <= 0.1, "unverified": unverified, "metrics": m, "design": d.to_dict(),
                            "t": round(time.time() - self.t0, 2)})
         self.cache[k] = (c, m, r)
         return self.cache[k]
