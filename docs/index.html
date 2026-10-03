@@ -128,6 +128,10 @@ footer{margin-top:60px;color:var(--muted);font-size:13px}
     <p class="note">Power uses the ideal-mirror estimate P = VDD · I<sub>b</sub> · (1 + m5 + m7), which runs a few percent above SPICE because of channel-length modulation. Everything else is predicted by the model. <b>Reality check:</b> for the default sizing loaded here, SPICE gives 75.3 dB gain, 40.7 MHz UGBW, 60.2° phase margin, 228 µW, a 32 mV saturation margin and a 1.8 mV offset. Comparing those numbers with the predictions shows the size of the model error.</p>
   </div>
 
+  <h2 id="robustH" hidden>Corner-aware optimization</h2>
+  <p class="note" id="robustNote" hidden>The optimizer simulates every nominally feasible design at extreme PVT corners (all charged to the budget); the final design is then checked on the full 5 × 3 grid.</p>
+  <div class="panel tablewrap" id="robustWrap" hidden><table id="robustTable"></table></div>
+
   <h2>Robustness: PVT corners and Monte Carlo</h2>
   <p class="sub">The best design from each optimizer is re-simulated at 5 process corners (tt, ff, ss, fs, sf) × 3 temperatures (−40, 27, 125 °C), plus 100 mismatch Monte Carlo runs. These designs were optimized at nominal conditions only, so this table shows how much margin each one kept.</p>
   <div class="panel tablewrap"><table id="pvtTable"></table></div>
@@ -241,6 +245,17 @@ fetch("data/results.json").then(r => r.json()).then(D => {
   // live predictor
   if (D.model) setupPredictor(D.model, S);
 
+  // Corner-aware study
+  if (D.robust) {
+    ["robustH", "robustNote", "robustWrap"].forEach(id => document.getElementById(id).hidden = false);
+    document.getElementById("robustTable").innerHTML =
+      `<tr><th>Strategy</th><th>Robust-feasible runs</th><th>Median sims</th><th>Full-grid passes (per seed)</th><th>Median power</th></tr>` +
+      Object.entries(D.robust).map(([a, r]) => `<tr><td>${B[a] ? B[a].label : a}</td>
+        <td class="${r.robust_feasible === r.runs ? "ok" : "no"}">${r.robust_feasible}/${r.runs}</td>
+        <td>${r.median_sims > r.budget ? "&gt;" + r.budget : fmt(r.median_sims, 0)}</td>
+        <td>${r.full_pass.join(", ")} / ${r.full_total}</td>
+        <td>${r.median_power_uw == null ? "n/a" : fmt(r.median_power_uw) + " µW"}</td></tr>`).join("");
+  }
   // PVT
   if (D.pvt) {
     const rows = Object.entries(D.pvt);
