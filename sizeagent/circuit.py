@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -93,7 +94,8 @@ def random_design(rng: random.Random) -> Design:
 
 def snap(group_or_key: str, value: float) -> float:
     """Snap a value to the nearest allowed grid point (used by the LLM agent)."""
-    grid = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}.get(group_or_key, MULT_CHOICES)
+    grids: dict[str, Sequence[float]] = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}
+    grid: Sequence[float] = grids.get(group_or_key, MULT_CHOICES)
     return min(grid, key=lambda g: abs(g - value))
 
 

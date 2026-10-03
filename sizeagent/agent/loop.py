@@ -10,6 +10,7 @@ import argparse
 import json
 import time
 from pathlib import Path
+from typing import Any
 
 from ..circuit import CL_PF, VDD
 from ..specs import Evaluator, Spec, feasible
@@ -80,7 +81,7 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
     ev = Evaluator(spec=spec, budget=budget)
     tools = AgentTools(ev)
     client = client or ChatClient(provider, model)
-    messages = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
+    messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
                 {"role": "user", "content": "Size the op-amp to meet the spec with as few simulations as possible."}]
     log, api_error = [], None
     t0 = time.time()

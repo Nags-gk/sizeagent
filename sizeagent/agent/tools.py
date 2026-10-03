@@ -1,6 +1,8 @@
 """Tools the sizing agent can call. Each returns a JSON-serializable dict."""
 from __future__ import annotations
 
+from typing import Any
+
 from ..circuit import (
     CC_PF,
     GROUPS,
@@ -30,7 +32,7 @@ DESIGN_SCHEMA = {
     "required": [f"{g}_{p}" for g in GROUPS for p in ("w", "l")] + MULT_KEYS + ["cc_pf", "rz_kohm", "ib_ua"],
 }
 
-TOOL_SPECS = [
+TOOL_SPECS: list[dict[str, Any]] = [
     {"type": "function", "function": {
         "name": "simulate",
         "description": "Run one ngspice simulation (costs 1 from the budget). Returns snapped design, "
@@ -100,7 +102,7 @@ class AgentTools:
         except BudgetExceeded:
             return {"error": "simulation budget exhausted; submit your best design", **self._budget()}
         if m is None:
-            return {"design": d.to_dict(), "error": res.error or "simulation failed", **self._budget()}
+            return {"design": d.to_dict(), "error": (res.error if res else "") or "simulation failed", **self._budget()}
         v = violations(m, self.ev.spec)
         return {"design": d.to_dict(), "metrics": {k: _r(x, 2) for k, x in m.items()},
                 "violations": {k: _r(x) for k, x in v.items() if x > 0},
@@ -140,7 +142,7 @@ class AgentTools:
 
     def call(self, name: str, args: dict) -> dict:
         fn = getattr(self, name, None)
-        if name not in {t["function"]["name"] for t in TOOL_SPECS} or fn is None:
+        if name not in {str(t["function"]["name"]) for t in TOOL_SPECS} or fn is None:
             return {"error": f"unknown tool {name}"}
         try:
             return fn(**args)
