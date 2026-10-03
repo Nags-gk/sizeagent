@@ -12,9 +12,10 @@ import time
 from pathlib import Path
 
 from ..circuit import CL_PF, VDD
-from ..specs import Evaluator, Spec
+from ..specs import Evaluator, Spec, feasible
+from ..spice import simulate
 from .providers import ChatClient
-from .tools import TOOL_SPECS, AgentTools
+from .tools import TOOL_SPECS, AgentTools, design_from_args
 
 SYSTEM = """You are an analog IC design agent sizing a two-stage Miller-compensated CMOS op-amp \
 in the SkyWater SKY130 process (VDD = {vdd} V, load CL = {cl} pF, input common mode 0.9 V).
@@ -58,6 +59,18 @@ def compact(messages: list[dict], keep: int = 4) -> list[dict]:
                 pass
         out.append(m)
     return out
+
+
+def verify_final(design, ev: Evaluator) -> dict:
+    """Re-simulate the final design in SPICE outside the search budget, so the reported
+    result never rests on the agent's own claim."""
+    if design is None:
+        return {"submitted_metrics": None, "submitted_meets_spec": False}
+    c, m, _ = ev.cache.get(design.key()) or (None, None, None)
+    if m is None:
+        r = simulate(design, ev.corner, ev.temp)
+        m = r.metrics() if r.ok else None
+    return {"submitted_metrics": m, "submitted_meets_spec": feasible(m, ev.spec)}
 
 
 def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 150,
@@ -106,9 +119,11 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
             break
     best = ev.best()
     final = tools.submitted.to_dict() if tools.submitted else (best["design"] if best else None)
+    verified = verify_final(tools.submitted if tools.submitted else (design_from_args(best["design"]) if best else None),
+                            ev)
     summary = {"provider": provider, "model": getattr(client, "model", None), "budget": budget,
                "sims_used": ev.sims, "first_feasible_sim": ev.first_feasible(),
-               "best": best, "submitted": final, "rationale": tools.rationale,
+               "best": best, "submitted": final, **verified, "rationale": tools.rationale,
                "turns": len({x["turn"] for x in log}), "api_error": api_error, "wall_s": round(time.time() - t0, 1),
                "log": log, "trace": ev.trace}
     if out:

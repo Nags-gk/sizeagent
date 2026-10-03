@@ -74,3 +74,9 @@ def test_refine_after_budget_exhausted_returns_error_not_crash(monkeypatch):
     # local_search itself must also swallow an exhausted budget on the very first evaluation
     c, best = local_search(Evaluator(budget=0), encode(reference_design()), 5)
     assert c == float("inf") and best == encode(reference_design())
+
+
+def test_submitted_design_is_independently_verified(tmp_path):
+    s = run_agent(client=FakeClient(), budget=20, out=str(tmp_path / "r.json"), verbose=False)
+    assert s["submitted_metrics"]["gain_db"] > 60
+    assert s["submitted_meets_spec"] is False      # reference design violates the saturation margin
