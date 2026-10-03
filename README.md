@@ -73,6 +73,17 @@ Surrogate vs. SPICE on held-out designs:
 
 None of the nominal-only optima pass all 15 corners: optimizing at tt/27 C pushes designs to the edge of the spec.
 
+### LLM agent (local, no API key)
+
+`qwen2.5:7b` via Ollama, budget **100** simulations (not 300), 5 runs, every final design re-simulated in ngspice (`submitted_meets_spec`). Raw runs are in `results/`.
+
+| Setup | Met spec | Sims to spec | Failure modes |
+|---|---|---|---|
+| Unguarded | 1/5 | 23 | 2 request timeouts, 1 run resubmitting one design 25 times, 1 out of turns |
+| With guardrails (duplicate warning + auto-refine) | 2/5 | 2 and 77 | 2 request timeouts, 1 run spent all 100 sims without reaching spec |
+
+Treat this as a small-sample, small-model data point: 5 runs cannot separate the two setups, and the auto-refine guardrail never triggered in the guarded batch. The dominant failure is slow CPU inference timing out (15+ minutes per run on a 16 GB laptop), not the sizing logic. The surrogate-assisted GA needs a median of 62 simulations with no failures, so for this problem the optimizer beats a 7B local agent; a stronger hosted model (a single earlier Gemini run met spec in 2 simulations) is the fair comparison still to be run at scale.
+
 ### Corner-aware optimization
 
 `sizeagent/robust.py` adds a `RobustEvaluator`. A design is simulated at tt/27 C first; only nominally feasible designs are promoted to 6 extreme corners (ss and ff at -40/125 C, plus fs and sf at 27 C). A design counts as feasible only if it meets spec at all of them, and **every corner simulation is charged to the same budget**. Budget here is 600 simulations, 6 seeds, and the final design of every run is checked on the full 15-corner grid (`python scripts/robust_study.py`).
