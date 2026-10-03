@@ -90,3 +90,24 @@ def test_flat_design_arguments_are_accepted():
     r = t.call("simulate", dict(flat))             # no "design" wrapper
     assert "metrics" in r and r["sims_used"] == 1
     assert "design" in t.call("simulate", {"nonsense": 1}).get("error", "design")
+
+
+def test_duplicate_designs_are_flagged_and_trigger_auto_refine(tmp_path):
+    from sizeagent.agent.tools import AgentTools
+    from sizeagent.specs import Evaluator
+    t = AgentTools(Evaluator(budget=30))
+    d = reference_design().to_dict()
+    assert "note" not in t.simulate(d)
+    assert "DUPLICATE" in t.simulate(d)["note"] and t.dup_streak == 1
+    r = t.auto_refine(5)
+    assert "best_design" in r and t.dup_streak == 0
+
+
+def test_loop_auto_refines_a_stuck_model(tmp_path):
+    class Stuck(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.script = [("simulate", {"design": self.design})] * 4 + [("submit", {"design": self.design, "rationale": "x"})]
+
+    s = run_agent(client=Stuck(), budget=30, out=str(tmp_path / "r.json"), verbose=False)
+    assert any(x.get("auto") for x in s["log"]) and s["sims_used"] > 1

@@ -90,6 +90,7 @@ class AgentTools:
     def __init__(self, ev: Evaluator, max_pvt_calls: int = 3):
         self.ev, self.pvt_calls, self.max_pvt_calls = ev, 0, max_pvt_calls
         self.submitted: Design | None = None
+        self.dup_streak = 0
         self.rationale = ""
 
     def _budget(self) -> dict:
@@ -97,6 +98,8 @@ class AgentTools:
 
     def simulate(self, design: dict) -> dict:
         d = design_from_args(design)
+        duplicate = d.key() in self.ev.cache
+        self.dup_streak = self.dup_streak + 1 if duplicate else 0
         try:
             c, m, res = self.ev(d)
         except BudgetExceeded:
@@ -107,7 +110,19 @@ class AgentTools:
         return {"design": d.to_dict(), "metrics": {k: _r(x, 2) for k, x in m.items()},
                 "violations": {k: _r(x) for k, x in v.items() if x > 0},
                 "meets_spec": not any(x > 0 for x in v.values()),
+                **({"note": "DUPLICATE: this snapped design was already simulated, so no new information and no "
+                            "budget used. Change a geometry, multiplier, Cc, Rz or Ibias, or call refine."}
+                   if duplicate else {}),
                 "operating_point": op_summary(res), **self._budget()}
+
+    def auto_refine(self, sims: int = 20) -> dict:
+        """Guardrail used by the loop when the model keeps resubmitting the same design:
+        run a local search from the best design seen so far."""
+        best = self.ev.best()
+        if best is None:
+            return {"error": "nothing simulated yet"}
+        self.dup_streak = 0
+        return self.refine(best["design"], sims)
 
     def list_geometries(self, device: str) -> dict:
         return {"device": device, "w_l_um": valid_geometries()[device],

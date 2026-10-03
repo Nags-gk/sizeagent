@@ -1,0 +1,800 @@
+{
+ "provider": "ollama",
+ "model": "qwen2.5:7b",
+ "budget": 100,
+ "sims_used": 4,
+ "first_feasible_sim": null,
+ "best": {
+  "sim": 2,
+  "cost": 1.418872,
+  "best_cost": 1.418872,
+  "feasible": false,
+  "metrics": {
+   "gain_db": 66.7592,
+   "ugbw_mhz": 115.467,
+   "pm_deg": 63.846000000000004,
+   "power_uw": 237.323286,
+   "vout_dc": 0.8990113,
+   "min_sat_margin_mv": 29.05640000000001
+  },
+  "design": {
+   "inp_w": 5.0,
+   "inp_l": 0.5,
+   "load_w": 5.0,
+   "load_l": 0.5,
+   "bias_w": 1.0,
+   "bias_l": 0.25,
+   "cs_w": 7.0,
+   "cs_l": 0.5,
+   "m1": 2,
+   "m3": 2,
+   "m5": 2,
+   "m6": 4,
+   "m7": 4,
+   "cc_pf": 0.7,
+   "rz_kohm": 10.0,
+   "ib_ua": 20
+  },
+  "t": 72.57
+ },
+ "submitted": {
+  "inp_w": 5.0,
+  "inp_l": 0.5,
+  "load_w": 5.0,
+  "load_l": 0.5,
+  "bias_w": 1.0,
+  "bias_l": 0.25,
+  "cs_w": 7.0,
+  "cs_l": 0.5,
+  "m1": 2,
+  "m3": 2,
+  "m5": 2,
+  "m6": 4,
+  "m7": 4,
+  "cc_pf": 0.7,
+  "rz_kohm": 10.0,
+  "ib_ua": 20
+ },
+ "submitted_metrics": {
+  "gain_db": 66.7592,
+  "ugbw_mhz": 115.467,
+  "pm_deg": 63.846000000000004,
+  "power_uw": 237.323286,
+  "vout_dc": 0.8990113,
+  "min_sat_margin_mv": 29.05640000000001
+ },
+ "submitted_meets_spec": false,
+ "rationale": "",
+ "turns": 5,
+ "api_error": "ollama unreachable: timed out",
+ "wall_s": 1102.0,
+ "log": [
+  {
+   "turn": 0,
+   "thought": "Let's start by making an initial guess for the design parameters and run a simulation to see how close we are to meeting the specifications.\n\n### Initial Guess:\n1. **Input Pair (M1/M2):** We'll use a moderate size, say \\( W/L = 4/0.5 \\) um.\n2. **Load (M3/M4):** Mirror load, so similar size as input pair: \\( W/L = 4/0.5 \\) um.\n3. **Bias Diode (M8):** Small size to keep the bias current low, say \\( W/L = 1/0.25 \\) um.\n4. **Tail Current (M5):** We'll assume a moderate value for now, say \\( m_5 = 2 \\).\n5. **Second Stage (M6):** Larger than the input pair to get higher gain and better speed, say \\( W/L = 8/0.5 \\) um.\n6. **Sink Current (M7):** Similar size as M6 for matching current: \\( W/L = 8/0.5 \\) um.\n7. **Miller Capacitor (Cc):** We'll start with a value that gives us some margin, say \\( Cc = 1.0 \\) pF.\n8. **Nulling Resistor (Rz):** To cancel the RHP zero, we can use \\( Rz = 1 / gm6 \\).\n9. **Bias Current (Ibias):** We'll start with a value that gives us some margin and is feasible for the design: say \\( Ibias = 50 \\) \u03bcA.\n\nLet's run the simulation with these initial guesses.\n",
+   "tool": "simulate",
+   "args": {
+    "inp_l": 0.5,
+    "bias_w": 1,
+    "cs_l": 0.5,
+    "m5": 2,
+    "load_w": 4,
+    "load_l": 0.5,
+    "m6": 4,
+    "m1": 2,
+    "m7": 4,
+    "rz_kohm": 250,
+    "ib_ua": 50,
+    "inp_w": 4,
+    "bias_l": 0.25,
+    "cs_w": 8,
+    "m3": 2,
+    "cc_pf": 1
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 1.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 2,
+     "m3": 2,
+     "m5": 2,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 1.0,
+     "rz_kohm": 10.0,
+     "ib_ua": 30
+    },
+    "metrics": {
+     "gain_db": 65.43,
+     "ugbw_mhz": 174.52,
+     "pm_deg": 49.81,
+     "power_uw": 348.96,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": -15.79
+    },
+    "violations": {
+     "pm_deg": 1.019,
+     "power_uw": 0.145,
+     "sat_margin_mv": 1.316
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 22.23,
+      "gm_over_id": 16.2,
+      "vov_mv": 63.0,
+      "sat_margin_mv": 404.0,
+      "m": 2
+     },
+     "M2": {
+      "id_ua": 22.38,
+      "gm_over_id": 16.2,
+      "vov_mv": 64.0,
+      "sat_margin_mv": 322.0,
+      "m": 2
+     },
+     "M3": {
+      "id_ua": 22.23,
+      "gm_over_id": 10.1,
+      "vov_mv": 150.0,
+      "sat_margin_mv": 957.0,
+      "m": 2
+     },
+     "M4": {
+      "id_ua": 22.38,
+      "gm_over_id": 10.1,
+      "vov_mv": 150.0,
+      "sat_margin_mv": 1038.0,
+      "m": 2
+     },
+     "M5": {
+      "id_ua": 44.62,
+      "gm_over_id": 6.3,
+      "vov_mv": 225.0,
+      "sat_margin_mv": -16.0,
+      "m": 2
+     },
+     "M6": {
+      "id_ua": 119.25,
+      "gm_over_id": 7.7,
+      "vov_mv": 222.0,
+      "sat_margin_mv": 671.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 119.25,
+      "gm_over_id": 6.9,
+      "vov_mv": 225.0,
+      "sat_margin_mv": 714.0,
+      "m": 4
+     },
+     "M8": {
+      "id_ua": 30.0,
+      "gm_over_id": 6.9,
+      "vov_mv": 225.0,
+      "sat_margin_mv": 752.0,
+      "m": 1
+     }
+    },
+    "sims_used": 1,
+    "sims_left": 99
+   },
+   "sims_before": 0,
+   "sims_after": 1
+  },
+  {
+   "turn": 1,
+   "thought": "The initial design has some violations:\n- Phase Margin: 49.81\u00b0 (short of the target by 0.19\u00b0)\n- Power Consumption: 348.96 \u03bcW (exceeding the limit by 28.96 \u03bcW)\n- Saturation Margin: -15.79 mV (not meeting the requirement)\n\nLet's address these issues step-by-step:\n\n### Phase Margin:\nTo improve phase margin, we need to increase \\( \\frac{g_m6}{C_c} \\) or decrease \\( C_c \\). Given that \\( R_z = 10 \\) k\u03a9 is already reasonable, let's try reducing \\( C_c \\).\n\n### Power Consumption:\nWe can reduce the bias current \\( I_{bias} \\) to lower power consumption. Let's set it to a more conservative value like 25 \u03bcA.\n\n### Saturation Margin:\nTo improve saturation margin, we need to ensure that all transistors are operating in the saturation region with sufficient margin. We might need to increase the width of some transistors or adjust their lengths.\n\nLet's update our design and run another simulation.\n",
+   "tool": "simulate",
+   "args": {
+    "m6": 4,
+    "ib_ua": 25,
+    "m3": 2,
+    "cs_w": 7,
+    "m5": 2,
+    "m7": 4,
+    "cc_pf": 0.8,
+    "load_w": 5,
+    "bias_l": 0.25,
+    "cs_l": 0.5,
+    "rz_kohm": 10,
+    "inp_w": 5,
+    "inp_l": 0.5,
+    "load_l": 0.5,
+    "bias_w": 1,
+    "m1": 2
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 1.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 2,
+     "m3": 2,
+     "m5": 2,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 0.7,
+     "rz_kohm": 10.0,
+     "ib_ua": 20
+    },
+    "metrics": {
+     "gain_db": 66.76,
+     "ugbw_mhz": 115.47,
+     "pm_deg": 63.85,
+     "power_uw": 237.32,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 29.06
+    },
+    "violations": {
+     "sat_margin_mv": 0.419
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 15.78,
+      "gm_over_id": 17.6,
+      "vov_mv": 42.0,
+      "sat_margin_mv": 429.0,
+      "m": 2
+     },
+     "M2": {
+      "id_ua": 15.87,
+      "gm_over_id": 17.6,
+      "vov_mv": 43.0,
+      "sat_margin_mv": 363.0,
+      "m": 2
+     },
+     "M3": {
+      "id_ua": 15.78,
+      "gm_over_id": 11.4,
+      "vov_mv": 118.0,
+      "sat_margin_mv": 948.0,
+      "m": 2
+     },
+     "M4": {
+      "id_ua": 15.87,
+      "gm_over_id": 11.4,
+      "vov_mv": 118.0,
+      "sat_margin_mv": 1014.0,
+      "m": 2
+     },
+     "M5": {
+      "id_ua": 31.65,
+      "gm_over_id": 8.4,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 29.0,
+      "m": 2
+     },
+     "M6": {
+      "id_ua": 80.2,
+      "gm_over_id": 9.1,
+      "vov_mv": 175.0,
+      "sat_margin_mv": 708.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 80.2,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 742.0,
+      "m": 4
+     },
+     "M8": {
+      "id_ua": 20.0,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 728.0,
+      "m": 1
+     }
+    },
+    "sims_used": 2,
+    "sims_left": 98
+   },
+   "sims_before": 1,
+   "sims_after": 2
+  },
+  {
+   "turn": 2,
+   "thought": "The updated design shows significant improvements:\n- Phase Margin: 63.85\u00b0 (meets the target)\n- Power Consumption: 237.32 \u03bcW (within the limit)\n\nHowever, there is still a small violation in the saturation margin for M5 transistors, which is only 29 mV.\n\nTo address this, we can:\n1. Increase the width of M5 to improve its saturation margin.\n2. Ensure that all other transistors are also operating within their saturation regions with sufficient margins.\n\nLet's increase the width of M5 and run another simulation.\n",
+   "tool": "simulate",
+   "args": {
+    "m1": 2,
+    "rz_kohm": 10,
+    "bias_w": 1,
+    "cs_l": 0.5,
+    "m5": 3,
+    "m6": 4,
+    "m7": 4,
+    "ib_ua": 20,
+    "m3": 2,
+    "cc_pf": 0.7,
+    "inp_l": 0.5,
+    "load_l": 0.5,
+    "cs_w": 7,
+    "inp_w": 5,
+    "load_w": 5,
+    "bias_l": 0.25
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 1.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 2,
+     "m3": 2,
+     "m5": 3,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 0.7,
+     "rz_kohm": 10.0,
+     "ib_ua": 20
+    },
+    "metrics": {
+     "gain_db": 66.54,
+     "ugbw_mhz": 144.99,
+     "pm_deg": 54.31,
+     "power_uw": 263.41,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 10.59
+    },
+    "violations": {
+     "pm_deg": 0.569,
+     "power_uw": 0.023,
+     "sat_margin_mv": 0.788
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 23.04,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 401.0,
+      "m": 2
+     },
+     "M2": {
+      "id_ua": 23.09,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 370.0,
+      "m": 2
+     },
+     "M3": {
+      "id_ua": 23.04,
+      "gm_over_id": 10.0,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 957.0,
+      "m": 2
+     },
+     "M4": {
+      "id_ua": 23.09,
+      "gm_over_id": 9.9,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 988.0,
+      "m": 2
+     },
+     "M5": {
+      "id_ua": 46.13,
+      "gm_over_id": 8.2,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 11.0,
+      "m": 3
+     },
+     "M6": {
+      "id_ua": 80.2,
+      "gm_over_id": 9.1,
+      "vov_mv": 175.0,
+      "sat_margin_mv": 707.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 80.2,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 742.0,
+      "m": 4
+     },
+     "M8": {
+      "id_ua": 20.0,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 728.0,
+      "m": 1
+     }
+    },
+    "sims_used": 3,
+    "sims_left": 97
+   },
+   "sims_before": 2,
+   "sims_after": 3
+  },
+  {
+   "turn": 3,
+   "thought": "The updated design shows the following improvements and violations:\n- DC Gain: 66.54 dB (within target)\n- UGBW: 144.99 MHz (within target)\n- Phase Margin: 54.31\u00b0 (short of the target by 6.69\u00b0)\n- Power Consumption: 263.41 \u03bcW (exceeding the limit by 7.09 \u03bcW)\n- Saturation Margin: -0.788 mV (not meeting the requirement)\n\nTo address these issues, we need to:\n1. Increase the phase margin.\n2. Reduce power consumption.\n\n### Phase Margin\nWe can increase \\( \\frac{g_m6}{C_c} \\) by either increasing \\( g_m6 \\) or decreasing \\( C_c \\). Given that \\( R_z = 10 \\) k\u03a9 is already reasonable, let's try reducing \\( C_c \\).\n\n### Power Consumption\nTo reduce power consumption, we can decrease the bias current \\( I_{bias} \\).\n\nLet's update our design and run another simulation.\n",
+   "tool": "simulate",
+   "args": {
+    "inp_l": 0.5,
+    "load_l": 0.5,
+    "m6": 4,
+    "m7": 4,
+    "cs_w": 7,
+    "m5": 3,
+    "inp_w": 5,
+    "bias_w": 1,
+    "bias_l": 0.25,
+    "cs_l": 0.5,
+    "m1": 2,
+    "m3": 2,
+    "cc_pf": 0.5,
+    "ib_ua": 18,
+    "load_w": 5,
+    "rz_kohm": 10
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 1.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 2,
+     "m3": 2,
+     "m5": 3,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 0.5,
+     "rz_kohm": 10.0,
+     "ib_ua": 20
+    },
+    "metrics": {
+     "gain_db": 66.54,
+     "ugbw_mhz": 142.84,
+     "pm_deg": 51.79,
+     "power_uw": 263.41,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 10.59
+    },
+    "violations": {
+     "pm_deg": 0.821,
+     "power_uw": 0.023,
+     "sat_margin_mv": 0.788
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 23.04,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 401.0,
+      "m": 2
+     },
+     "M2": {
+      "id_ua": 23.09,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 370.0,
+      "m": 2
+     },
+     "M3": {
+      "id_ua": 23.04,
+      "gm_over_id": 10.0,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 957.0,
+      "m": 2
+     },
+     "M4": {
+      "id_ua": 23.09,
+      "gm_over_id": 9.9,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 988.0,
+      "m": 2
+     },
+     "M5": {
+      "id_ua": 46.13,
+      "gm_over_id": 8.2,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 11.0,
+      "m": 3
+     },
+     "M6": {
+      "id_ua": 80.2,
+      "gm_over_id": 9.1,
+      "vov_mv": 175.0,
+      "sat_margin_mv": 707.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 80.2,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 742.0,
+      "m": 4
+     },
+     "M8": {
+      "id_ua": 20.0,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 728.0,
+      "m": 1
+     }
+    },
+    "sims_used": 4,
+    "sims_left": 96
+   },
+   "sims_before": 3,
+   "sims_after": 4
+  },
+  {
+   "turn": 4,
+   "thought": "The updated design shows the following results:\n- DC Gain: 66.54 dB (within target)\n- UGBW: 142.84 MHz (within target)\n- Phase Margin: 51.79\u00b0 (short of the target by 3.21\u00b0)\n- Power Consumption: 263.41 \u03bcW (exceeding the limit by 7.09 \u03bcW)\n\nThe saturation margins for all transistors are still within acceptable limits, but we need to improve the phase margin and reduce power consumption.\n\n### Phase Margin\nTo increase the phase margin, we can try increasing \\( \\frac{g_m6}{C_c} \\) further by either:\n1. Increasing \\( g_m6 \\)\n2. Decreasing \\( C_c \\)\n\nGiven that \\( R_z = 10 \\) k\u03a9 is already reasonable, let's decrease \\( C_c \\).\n\n### Power Consumption\nTo reduce power consumption, we can try reducing the bias current \\( I_{bias} \\). However, this might affect the phase margin and gain. Let's first try decreasing \\( C_c \\) to see if it helps.\n\nLet's update our design with a smaller Miller capacitance \\( C_c \\).\n",
+   "tool": "simulate",
+   "args": {
+    "inp_w": 5,
+    "load_l": 0.5,
+    "cs_l": 0.5,
+    "m6": 4,
+    "inp_l": 0.5,
+    "bias_l": 0.25,
+    "cs_w": 7,
+    "m3": 2,
+    "ib_ua": 20,
+    "bias_w": 1,
+    "rz_kohm": 10,
+    "load_w": 5,
+    "m1": 2,
+    "m5": 3,
+    "m7": 4,
+    "cc_pf": 0.4
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 1.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 2,
+     "m3": 2,
+     "m5": 3,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 0.5,
+     "rz_kohm": 10.0,
+     "ib_ua": 20
+    },
+    "metrics": {
+     "gain_db": 66.54,
+     "ugbw_mhz": 142.84,
+     "pm_deg": 51.79,
+     "power_uw": 263.41,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 10.59
+    },
+    "violations": {
+     "pm_deg": 0.821,
+     "power_uw": 0.023,
+     "sat_margin_mv": 0.788
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 23.04,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 401.0,
+      "m": 2
+     },
+     "M2": {
+      "id_ua": 23.09,
+      "gm_over_id": 16.1,
+      "vov_mv": 65.0,
+      "sat_margin_mv": 370.0,
+      "m": 2
+     },
+     "M3": {
+      "id_ua": 23.04,
+      "gm_over_id": 10.0,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 957.0,
+      "m": 2
+     },
+     "M4": {
+      "id_ua": 23.09,
+      "gm_over_id": 9.9,
+      "vov_mv": 153.0,
+      "sat_margin_mv": 988.0,
+      "m": 2
+     },
+     "M5": {
+      "id_ua": 46.13,
+      "gm_over_id": 8.2,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 11.0,
+      "m": 3
+     },
+     "M6": {
+      "id_ua": 80.2,
+      "gm_over_id": 9.1,
+      "vov_mv": 175.0,
+      "sat_margin_mv": 707.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 80.2,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 742.0,
+      "m": 4
+     },
+     "M8": {
+      "id_ua": 20.0,
+      "gm_over_id": 8.5,
+      "vov_mv": 173.0,
+      "sat_margin_mv": 728.0,
+      "m": 1
+     }
+    },
+    "sims_used": 4,
+    "sims_left": 96
+   },
+   "sims_before": 4,
+   "sims_after": 4
+  }
+ ],
+ "trace": [
+  {
+   "sim": 1,
+   "cost": 3.479983170343395,
+   "best_cost": 3.479983170343395,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 65.4285,
+    "ugbw_mhz": 174.517,
+    "pm_deg": 49.80600000000001,
+    "power_uw": 348.96123,
+    "vout_dc": 0.8987039,
+    "min_sat_margin_mv": -15.787299999999977
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 1.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 2,
+    "m3": 2,
+    "m5": 2,
+    "m6": 4,
+    "m7": 4,
+    "cc_pf": 1.0,
+    "rz_kohm": 10.0,
+    "ib_ua": 30
+   },
+   "t": 37.08
+  },
+  {
+   "sim": 2,
+   "cost": 1.418872,
+   "best_cost": 1.418872,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 66.7592,
+    "ugbw_mhz": 115.467,
+    "pm_deg": 63.846000000000004,
+    "power_uw": 237.323286,
+    "vout_dc": 0.8990113,
+    "min_sat_margin_mv": 29.05640000000001
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 1.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 2,
+    "m3": 2,
+    "m5": 2,
+    "m6": 4,
+    "m7": 4,
+    "cc_pf": 0.7,
+    "rz_kohm": 10.0,
+    "ib_ua": 20
+   },
+   "t": 72.57
+  },
+  {
+   "sim": 3,
+   "cost": 2.38015194972808,
+   "best_cost": 1.418872,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 66.542,
+    "ugbw_mhz": 144.993,
+    "pm_deg": 54.307,
+    "power_uw": 263.407392,
+    "vout_dc": 0.8995223,
+    "min_sat_margin_mv": 10.591799999999985
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 1.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 2,
+    "m3": 2,
+    "m5": 3,
+    "m6": 4,
+    "m7": 4,
+    "cc_pf": 0.7,
+    "rz_kohm": 10.0,
+    "ib_ua": 20
+   },
+   "t": 99.39
+  },
+  {
+   "sim": 4,
+   "cost": 2.6315519497280793,
+   "best_cost": 1.418872,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 66.542,
+    "ugbw_mhz": 142.844,
+    "pm_deg": 51.793000000000006,
+    "power_uw": 263.407392,
+    "vout_dc": 0.8995223,
+    "min_sat_margin_mv": 10.591799999999985
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 1.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 2,
+    "m3": 2,
+    "m5": 3,
+    "m6": 4,
+    "m7": 4,
+    "cc_pf": 0.5,
+    "rz_kohm": 10.0,
+    "ib_ua": 20
+   },
+   "t": 156.66
+  }
+ ]
+}

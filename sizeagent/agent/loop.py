@@ -118,6 +118,16 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
                              "content": json.dumps(result)})
         if tools.submitted is not None:
             break
+        if tools.dup_streak >= 3 and ev.sims < ev.budget:
+            # The model is stuck resubmitting one design; hand over to local search and say so.
+            sims_before = ev.sims
+            result = tools.auto_refine()
+            log.append({"turn": turn, "thought": "", "tool": "auto_refine", "args": {}, "result": result,
+                        "sims_before": sims_before, "sims_after": ev.sims, "auto": True})
+            messages.append({"role": "user", "content": "You repeated the same design 3 times, so local search "
+                             f"ran from your best design automatically. Result: {json.dumps(result)[:1500]}"})
+            if verbose:
+                print(f"[{turn}] auto_refine -> meets_spec={result.get('meets_spec')}")
     best = ev.best()
     final = tools.submitted.to_dict() if tools.submitted else (best["design"] if best else None)
     verified = verify_final(tools.submitted if tools.submitted else (design_from_args(best["design"]) if best else None),
