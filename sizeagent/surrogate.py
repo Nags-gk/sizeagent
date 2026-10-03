@@ -90,7 +90,7 @@ def predicted_cost(y: np.ndarray, spec: Spec) -> float:
 
 @run_safely
 def surrogate_ga(ev: Evaluator, seed: int = 0, warmup: int = 40, per_gen: int = 10,
-                 pool: int = 400, epochs: int = 150) -> None:
+                 pool: int = 400, epochs: int = 150, min_train: int = 8) -> None:
     """Surrogate-assisted GA: an MLP ensemble screens `pool` GA offspring per
     generation; only the `per_gen` most promising (lower-confidence-bound on
     predicted violation) are simulated in SPICE. Retrains every generation."""
@@ -107,11 +107,17 @@ def surrogate_ga(ev: Evaluator, seed: int = 0, warmup: int = 40, per_gen: int = 
     gen = 0
     while True:
         good = [(v, m) for v, _, m in seen if m is not None]
+        while len(good) < min_train:         # too few successful sims to fit a model: keep sampling
+            v = random_vector(rng)
+            run(v)
+            if seen[-1][2] is not None:
+                good.append((v, seen[-1][2]))
         X = np.array([features(decode(v)) for v, _ in good])
         Y = np.array([targets(m) for _, m in good])
         sur = Surrogate(n_models=3, epochs=epochs, seed=seed + gen).fit(X, Y)
         parents = sorted(seen, key=lambda t: t[1])[:12]
-        cands, keys = [], set(ev.cache)
+        cands: list[list[int]] = []
+        keys = set(ev.cache)
         while len(cands) < pool:
             a, b = rng.choice(parents)[0], rng.choice(parents)[0]
             child = [x if rng.random() < 0.5 else y for x, y in zip(a, b)]
