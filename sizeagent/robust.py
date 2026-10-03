@@ -69,8 +69,8 @@ class RobustEvaluator(Evaluator):
                 robust_ok, c = True, c_nom        # in [0, 0.1]
             else:
                 c = 0.2 + 0.7 * total / (1.0 + total)   # between nominal-feasible and infeasible
-        best = min([row["cost"] for row in self.trace] + [c])
-        self.trace.append({"sim": self.sims, "cost": c, "best_cost": best, "feasible": robust_ok,
+        self.best_cost = min(self.best_cost, c)
+        self.trace.append({"sim": self.sims, "cost": c, "best_cost": self.best_cost, "feasible": robust_ok,
                            "nominal_feasible": c_nom <= 0.1, "unverified": unverified, "metrics": m, "design": d.to_dict(),
                            "t": round(time.time() - self.t0, 2)})
         self.cache[k] = (c, m, r)

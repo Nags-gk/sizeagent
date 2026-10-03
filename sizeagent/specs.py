@@ -70,6 +70,7 @@ class Evaluator:
     cache: dict = field(default_factory=dict)
     trace: list = field(default_factory=list)   # one row per unique simulation
     sims: int = 0
+    best_cost: float = float("inf")
     t0: float = field(default_factory=time.time)
 
     def __call__(self, d: Design) -> tuple[float, dict | None, SimResult | None]:
@@ -82,8 +83,8 @@ class Evaluator:
         self.sims += 1
         m = r.metrics() if r.ok else None
         c = cost(m, self.spec)
-        best = min([row["cost"] for row in self.trace] + [c])
-        self.trace.append({"sim": self.sims, "cost": c, "best_cost": best, "feasible": feasible(m, self.spec),
+        self.best_cost = min(self.best_cost, c)
+        self.trace.append({"sim": self.sims, "cost": c, "best_cost": self.best_cost, "feasible": feasible(m, self.spec),
                            "metrics": m, "design": d.to_dict(), "t": round(time.time() - self.t0, 2)})
         self.cache[k] = (c, m, r)
         return self.cache[k]
