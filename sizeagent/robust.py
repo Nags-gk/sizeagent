@@ -12,8 +12,8 @@ import time
 from dataclasses import dataclass, field
 
 from .circuit import Design
-from .specs import BudgetExceeded, Evaluator, cost, violations
 from .pvt import CORNERS, TEMPS
+from .specs import BudgetExceeded, Evaluator, cost, violations
 from .spice import SimResult, simulate
 
 # Extremes that bound the PVT space: slow/fast at both temperature ends, plus skew corners.
