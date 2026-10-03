@@ -1,7 +1,8 @@
 """Corner-aware (robust) evaluation.
 
 Hierarchical scheme: a design is first simulated at nominal (tt, 27 C). Only a
-nominally feasible design is promoted to the corner set, so the extra
+nominally feasible design is promoted to 6 extreme corners, and only if those
+pass is it checked on the rest of the 15-point PVT grid, so the extra
 simulations are spent where they can change the answer. Every corner run is
 charged to the same budget as any other SPICE call.
 """
@@ -12,15 +13,29 @@ from dataclasses import dataclass, field
 
 from .circuit import Design
 from .specs import BudgetExceeded, Evaluator, cost, violations
+from .pvt import CORNERS, TEMPS
 from .spice import SimResult, simulate
 
 # Extremes that bound the PVT space: slow/fast at both temperature ends, plus skew corners.
 ROBUST_CORNERS = [("ss", 125.0), ("ss", -40.0), ("ff", 125.0), ("ff", -40.0), ("fs", 27.0), ("sf", 27.0)]
+# Tier 2: the remaining points of the full 5 corners x 3 temperatures grid (nominal tt/27 is tier 0).
+GRID_REST = [(c, t) for c in CORNERS for t in TEMPS
+             if (c, t) not in ROBUST_CORNERS and (c, t) != ("tt", 27.0)]
 
 
 @dataclass
 class RobustEvaluator(Evaluator):
     corners: list = field(default_factory=lambda: list(ROBUST_CORNERS))
+    rest: list = field(default_factory=lambda: list(GRID_REST))   # only run if all of `corners` pass
+
+    def _sweep(self, d: Design, points: list) -> float:
+        total = 0.0
+        for corner, temp in points:
+            rc = simulate(d, corner, temp)
+            self.sims += 1
+            mc = rc.metrics() if rc.ok else None
+            total += sum(violations(mc, self.spec).values()) if mc else 100.0
+        return total
 
     def __call__(self, d: Design) -> tuple[float, dict | None, SimResult | None]:
         k = d.key()
@@ -36,12 +51,11 @@ class RobustEvaluator(Evaluator):
         if m is not None and c_nom <= 0.1:
             if self.sims + len(self.corners) > self.budget:
                 raise BudgetExceeded
-            total = 0.0
-            for corner, temp in self.corners:
-                rc = simulate(d, corner, temp)
-                self.sims += 1
-                mc = rc.metrics() if rc.ok else None
-                total += sum(violations(mc, self.spec).values()) if mc else 100.0
+            total = self._sweep(d, self.corners)
+            if total == 0 and self.rest:
+                if self.sims + len(self.rest) > self.budget:
+                    raise BudgetExceeded
+                total = self._sweep(d, self.rest)
             if total == 0:
                 robust_ok, c = True, c_nom        # in [0, 0.1]
             else:

@@ -7,7 +7,7 @@ license = {text = "Apache-2.0"}
 dependencies = ["numpy", "torch", "optuna", "matplotlib"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "scipy"]
+dev = ["pytest", "pytest-cov", "ruff"]
 
 [project.scripts]
 sizeagent-agent = "sizeagent.agent.loop:main"

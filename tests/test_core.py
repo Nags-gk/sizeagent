@@ -90,8 +90,8 @@ def test_robust_evaluator_promotes_only_nominal_feasible(monkeypatch):
     monkeypatch.setattr(rb, "simulate", fake)
     ev = RobustEvaluator(budget=50)
     c, _, _ = ev(random_design(random.Random(1)))
-    assert len(calls) == 1 + len(ev.corners) and ev.trace[-1]["feasible"] and c <= 0.1
+    assert len(calls) == 1 + len(ev.corners) + len(ev.rest) == 15 and ev.trace[-1]["feasible"] and c <= 0.1
     fail_at = ("ss", 125.0)
     c2, _, _ = ev(random_design(random.Random(2)))
     assert not ev.trace[-1]["feasible"] and ev.trace[-1]["nominal_feasible"] and 0.2 < c2 < 1.0
-    assert ev.sims == 2 * (1 + len(ev.corners))
+    assert ev.sims == 15 + 1 + len(ev.corners)
