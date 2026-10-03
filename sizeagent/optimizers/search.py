@@ -107,9 +107,10 @@ def local_search(ev: Evaluator, start: list[int], sims: int, seed: int = 0) -> t
     rng = random.Random(seed)
     card = cardinality()
     stop_at = ev.sims + sims
-    cur, c_cur = list(start), _f(ev, start)
+    cur, c_cur = list(start), float("inf")
     best, c_best = list(cur), c_cur
     try:
+        c_cur = c_best = _f(ev, start)       # may raise if the budget is already spent
         step = 0
         while ev.sims < stop_at and step < 20 * max(sims, 1):
             temp = 0.3 * (0.01 / 0.3) ** (step / max(sims, 1))

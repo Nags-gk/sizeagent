@@ -61,3 +61,16 @@ def test_api_failure_keeps_partial_results(tmp_path):
     c.script = c.script[:1]
     s = run_agent(client=c, budget=10, out=str(tmp_path / "r.json"), verbose=False)
     assert s["api_error"] == "quota" and s["sims_used"] == 1 and (tmp_path / "r.json").exists()
+
+
+def test_refine_after_budget_exhausted_returns_error_not_crash(monkeypatch):
+    import sizeagent.agent.tools as tl
+    from sizeagent.optimizers import encode
+    from sizeagent.optimizers.search import local_search
+    from sizeagent.specs import Evaluator
+
+    t = tl.AgentTools(Evaluator(budget=0))
+    assert "error" in t.refine(reference_design().to_dict(), 5)
+    # local_search itself must also swallow an exhausted budget on the very first evaluation
+    c, best = local_search(Evaluator(budget=0), encode(reference_design()), 5)
+    assert c == float("inf") and best == encode(reference_design())

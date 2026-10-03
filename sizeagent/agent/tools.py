@@ -112,6 +112,8 @@ class AgentTools:
                 "multipliers": MULT_CHOICES, "cc_pf": CC_PF, "rz_kohm": RZ_KOHM, "ib_ua": IB_UA}
 
     def refine(self, design: dict, sims: int) -> dict:
+        if self.ev.sims >= self.ev.budget:
+            return {"error": "simulation budget exhausted; submit your best design", **self._budget()}
         sims = max(1, min(int(sims), 40, self.ev.budget - self.ev.sims))
         c, best = local_search(self.ev, encode(design_from_args(design)), sims, seed=self.ev.sims)
         d = decode(best)
