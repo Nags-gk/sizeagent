@@ -10,3 +10,5 @@ results/old_*
 .ruff_cache/
 .mypy_cache/
 .coverage
+results/*.log
+results/agent_*.json.tmp

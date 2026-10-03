@@ -94,9 +94,11 @@ Corner-aware search lifts the surrogate-assisted GA from 10/15 corners (nominal-
 ## Run it
 
 ```bash
-sudo apt-get install ngspice              # ngspice 42 tested
+sudo apt-get install ngspice              # or: brew install ngspice  (ngspice 42 and 47 tested)
 ./scripts/setup_pdk.sh                    # ~10 MB of SKY130 SPICE models
-pip install -e .[dev] && pytest -q
+pip install -e .[dev] && pytest -q        # Python >= 3.10
+# non-editable install? point at the built models: export SIZEAGENT_PDK=/path/to/pdk_models
+# or skip local setup entirely:  docker build -t sizeagent . && docker run sizeagent
 
 python scripts/run_benchmark.py --seeds 20 --budget 300
 python scripts/surrogate_study.py && python scripts/pvt_study.py
@@ -107,6 +109,7 @@ python scripts/make_report.py             # -> docs/data/results.json, docs/img/
 # LLM agent (free Gemini key from https://aistudio.google.com/apikey)
 export GEMINI_API_KEY=...
 python -m sizeagent.agent --provider gemini --budget 150 --out results/agent_gemini_1.json
+# or Groq:   export GROQ_API_KEY=...   (free tier: ~200k tokens/day, 8k tokens/min)
 # or fully local:  ollama pull qwen2.5:7b && python -m sizeagent.agent --provider ollama
 ```
 
