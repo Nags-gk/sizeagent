@@ -80,3 +80,13 @@ def test_submitted_design_is_independently_verified(tmp_path):
     s = run_agent(client=FakeClient(), budget=20, out=str(tmp_path / "r.json"), verbose=False)
     assert s["submitted_metrics"]["gain_db"] > 60
     assert s["submitted_meets_spec"] is False      # reference design violates the saturation margin
+
+
+def test_flat_design_arguments_are_accepted():
+    from sizeagent.agent.tools import AgentTools
+    from sizeagent.specs import Evaluator
+    t = AgentTools(Evaluator(budget=5))
+    flat = reference_design().to_dict()
+    r = t.call("simulate", dict(flat))             # no "design" wrapper
+    assert "metrics" in r and r["sims_used"] == 1
+    assert "design" in t.call("simulate", {"nonsense": 1}).get("error", "design")

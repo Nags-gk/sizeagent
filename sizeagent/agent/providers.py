@@ -54,12 +54,14 @@ class ChatClient:
     model: str | None = None
     temperature: float = 0.2
     max_retries: int = 6
+    timeout: float = 0.0          # seconds; 0 = SIZEAGENT_TIMEOUT or a provider default
 
     def __post_init__(self):
         load_dotenv()
         base, key_env, default_model = PROVIDERS[self.provider]
         self.base = os.environ.get("SIZEAGENT_BASE_URL", base)
         self.model = self.model or default_model
+        self.timeout = self.timeout or float(os.environ.get("SIZEAGENT_TIMEOUT", 900 if self.provider == "ollama" else 180))
         self.key = os.environ.get(key_env, "") if key_env else "ollama"
         if key_env and not self.key:
             raise RuntimeError(f"set {key_env} to use provider '{self.provider}'")
@@ -74,7 +76,7 @@ class ChatClient:
         delay = 5.0
         for attempt in range(self.max_retries):
             try:
-                with urllib.request.urlopen(req, timeout=180) as resp:
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                     data = json.loads(resp.read())
                 return data["choices"][0]["message"]
             except urllib.error.HTTPError as e:

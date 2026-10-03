@@ -140,11 +140,25 @@ class AgentTools:
         self.rationale = rationale
         return {"ok": True}
 
+    @staticmethod
+    def _normalize(name: str, args: dict) -> dict:
+        """Small models often put the design fields at the top level instead of under
+        `design`; accept that rather than burning turns on schema errors."""
+        if name not in {"simulate", "refine", "verify_pvt", "submit"} or "design" in args:
+            return args
+        keys = set(DESIGN_SCHEMA["properties"])
+        flat = {k: v for k, v in args.items() if k in keys}
+        if not flat:
+            return args
+        rest = {k: v for k, v in args.items() if k not in keys}
+        return {"design": flat, **rest}
+
     def call(self, name: str, args: dict) -> dict:
         fn = getattr(self, name, None)
         if name not in {str(t["function"]["name"]) for t in TOOL_SPECS} or fn is None:
             return {"error": f"unknown tool {name}"}
+        args = self._normalize(name, args)
         try:
             return fn(**args)
         except (KeyError, TypeError, ValueError) as e:
-            return {"error": f"bad arguments for {name}: {e}"}
+            return {"error": f"bad arguments for {name}: {e}. Call it as {{\"design\": {{...all design fields...}}}}"}
