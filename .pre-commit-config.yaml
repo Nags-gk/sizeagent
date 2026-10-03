@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: scan-secrets
+        name: scan for API keys
+        entry: python scripts/scan_secrets.py
+        language: system
+        pass_filenames: true
+      - id: ruff
+        name: ruff
+        entry: ruff check
+        language: system
+        types: [python]

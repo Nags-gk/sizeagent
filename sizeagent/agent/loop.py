@@ -15,7 +15,7 @@ from typing import Any
 from ..circuit import CL_PF, VDD
 from ..specs import Evaluator, Spec, feasible
 from ..spice import simulate
-from .providers import ChatClient
+from .providers import ChatClient, FallbackClient
 from .tools import TOOL_SPECS, AgentTools, design_from_args
 
 SYSTEM = """You are an analog IC design agent sizing a two-stage Miller-compensated CMOS op-amp \
@@ -80,7 +80,7 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
     spec = spec or Spec()
     ev = Evaluator(spec=spec, budget=budget)
     tools = AgentTools(ev)
-    client = client or ChatClient(provider, model)
+    client = client or (FallbackClient(model=model) if provider == "auto" else ChatClient(provider, model))
     messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
                 {"role": "user", "content": "Size the op-amp to meet the spec with as few simulations as possible."}]
     log, api_error = [], None
@@ -135,7 +135,7 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="LLM agent for SKY130 op-amp sizing")
-    ap.add_argument("--provider", default="gemini", choices=["gemini", "groq", "ollama"])
+    ap.add_argument("--provider", default="auto", choices=["auto", "gemini", "groq", "ollama"])
     ap.add_argument("--model")
     ap.add_argument("--budget", type=int, default=150)
     ap.add_argument("--max-turns", type=int, default=40)

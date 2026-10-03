@@ -106,9 +106,9 @@ python scripts/robust_study.py            # corner-aware optimization
 python scripts/stats.py                   # CIs and significance tests
 python scripts/make_report.py             # -> docs/data/results.json, docs/img/*.png
 
-# LLM agent (free Gemini key from https://aistudio.google.com/apikey)
-export GEMINI_API_KEY=...
-python -m sizeagent.agent --provider gemini --budget 150 --out results/agent_gemini_1.json
+# LLM agent. Keys go in .env (copy .env.example; gitignored), never in chat or commits.
+# `--provider auto` tries Groq, then Gemini, then local Ollama, whichever is configured and has quota left.
+python -m sizeagent.agent --provider auto --budget 150 --out results/agent_run_1.json
 # or Groq:   export GROQ_API_KEY=...   (free tier: ~200k tokens/day, 8k tokens/min)
 # or fully local:  ollama pull qwen2.5:7b && python -m sizeagent.agent --provider ollama
 ```
