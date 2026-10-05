@@ -1,0 +1,885 @@
+{
+ "provider": "ollama",
+ "model": "qwen2.5:7b",
+ "budget": 100,
+ "sims_used": 12,
+ "first_feasible_sim": null,
+ "best": {
+  "sim": 11,
+  "cost": 4.111600000000001,
+  "best_cost": 4.111600000000001,
+  "feasible": false,
+  "metrics": {
+   "gain_db": 60.637,
+   "ugbw_mhz": 85.1145,
+   "pm_deg": 28.883999999999986,
+   "power_uw": 185.67387,
+   "vout_dc": 0.896519,
+   "min_sat_margin_mv": 130.00948
+  },
+  "design": {
+   "inp_w": 5.0,
+   "inp_l": 0.25,
+   "load_w": 7.0,
+   "load_l": 0.5,
+   "bias_w": 7.0,
+   "bias_l": 0.25,
+   "cs_w": 7.0,
+   "cs_l": 0.5,
+   "m1": 3,
+   "m3": 5,
+   "m5": 2,
+   "m6": 4,
+   "m7": 4,
+   "cc_pf": 0.2,
+   "rz_kohm": 7.0,
+   "ib_ua": 15
+  },
+  "t": 103.66
+ },
+ "submitted": {
+  "inp_w": 5.0,
+  "inp_l": 0.25,
+  "load_w": 7.0,
+  "load_l": 0.5,
+  "bias_w": 7.0,
+  "bias_l": 0.25,
+  "cs_w": 7.0,
+  "cs_l": 0.5,
+  "m1": 3,
+  "m3": 5,
+  "m5": 2,
+  "m6": 4,
+  "m7": 4,
+  "cc_pf": 0.2,
+  "rz_kohm": 7.0,
+  "ib_ua": 15
+ },
+ "submitted_metrics": {
+  "gain_db": 60.637,
+  "ugbw_mhz": 85.1145,
+  "pm_deg": 28.883999999999986,
+  "power_uw": 185.67387,
+  "vout_dc": 0.896519,
+  "min_sat_margin_mv": 130.00948
+ },
+ "submitted_meets_spec": false,
+ "rationale": "",
+ "turns": 4,
+ "api_error": "ollama unreachable: timed out",
+ "wall_s": 1003.9,
+ "log": [
+  {
+   "turn": 0,
+   "thought": "Let's start by making an initial guess for the design parameters and run a simulation to see how close we are to meeting the specifications.\n\n### Initial Guess:\n1. **Input Pair (M1/M2):** We'll use a moderate size, say \\( W/L = 4/0.5 \\) um.\n2. **Load (M3/M4):** Mirror load, so similar size as input pair, \\( W/L = 4/0.5 \\) um.\n3. **Biasing (M8):** A small bias current, say \\( I_{bias} = 10 \\mu A \\), with \\( m_5 = 2 \\) and \\( m_7 = 2 \\).\n4. **Common-Source Stage (M6):** Larger size to achieve higher gain, say \\( W/L = 8/0.5 \\) um.\n5. **Miller Capacitor (Cc):** A reasonable value for the Miller compensation, say \\( C_c = 0.1 \\text{ pF} \\).\n6. **Nulling Resistor (Rz):** Based on the gain and capacitance, we can estimate this later.\n\nLet's run a simulation with these initial guesses.\n",
+   "tool": "simulate",
+   "args": {
+    "cc_pf": 0.1,
+    "rz_kohm": 100,
+    "load_l": 0.5,
+    "bias_w": 2,
+    "m5": 2,
+    "m6": 4,
+    "m7": 2,
+    "ib_ua": 10,
+    "inp_l": 0.5,
+    "load_w": 4,
+    "bias_l": 0.5,
+    "cs_w": 8,
+    "m1": 3,
+    "inp_w": 4,
+    "cs_l": 0.5,
+    "m3": 3
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 3.0,
+     "bias_l": 0.5,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 3,
+     "m3": 3,
+     "m5": 2,
+     "m6": 4,
+     "m7": 2,
+     "cc_pf": 0.2,
+     "rz_kohm": 10.0,
+     "ib_ua": 10
+    },
+    "metrics": {
+     "gain_db": 73.84,
+     "ugbw_mhz": 49.65,
+     "pm_deg": 24.75,
+     "power_uw": 87.67,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 118.16
+    },
+    "violations": {
+     "pm_deg": 3.525
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 9.16,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 480.0,
+      "m": 3
+     },
+     "M2": {
+      "id_ua": 9.18,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 461.0,
+      "m": 3
+     },
+     "M3": {
+      "id_ua": 9.16,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 923.0,
+      "m": 3
+     },
+     "M4": {
+      "id_ua": 9.18,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 942.0,
+      "m": 3
+     },
+     "M5": {
+      "id_ua": 18.34,
+      "gm_over_id": 14.3,
+      "vov_mv": 95.0,
+      "sat_margin_mv": 118.0,
+      "m": 2
+     },
+     "M6": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.2,
+      "vov_mv": 56.0,
+      "sat_margin_mv": 790.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.3,
+      "vov_mv": 97.0,
+      "sat_margin_mv": 788.0,
+      "m": 2
+     },
+     "M8": {
+      "id_ua": 10.0,
+      "gm_over_id": 14.3,
+      "vov_mv": 96.0,
+      "sat_margin_mv": 616.0,
+      "m": 1
+     }
+    },
+    "sims_used": 1,
+    "sims_left": 99
+   },
+   "sims_before": 0,
+   "sims_after": 1
+  },
+  {
+   "turn": 1,
+   "thought": "The initial design shows that while the DC gain and power meet or exceed the specifications, the phase margin is significantly below the required 60 degrees (only 24.75 degrees). We need to increase the phase margin by adjusting the common-source stage (M6) size and Miller capacitance (Cc).\n\nLet's increase \\( W/L \\) of M6 to around 10/0.5 um, which should improve the gain and phase margin. We'll also adjust Cc to a smaller value, say 0.2 pF, to maintain the required gain.\n\nHere is the updated design:\n- **Input Pair (M1/M2):** \\( W/L = 4/0.5 \\) um\n- **Load (M3/M4):** \\( W/L = 4/0.5 \\) um\n- **Biasing (M8):** \\( I_{bias} = 10 \\mu A \\), with \\( m_5 = 2 \\) and \\( m_7 = 2 \\)\n- **Common-Source Stage (M6):** \\( W/L = 10/0.5 \\) um\n- **Miller Capacitor (Cc):** \\( C_c = 0.2 \\text{ pF} \\)\n- **Nulling Resistor (Rz):** We will estimate this based on the gain and capacitance.\n\nLet's run another simulation with these updated parameters.\n",
+   "tool": "simulate",
+   "args": {
+    "load_w": 4,
+    "bias_l": 0.5,
+    "cc_pf": 0.2,
+    "cs_w": 10,
+    "cs_l": 0.5,
+    "m3": 3,
+    "m5": 2,
+    "m7": 2,
+    "ib_ua": 10,
+    "inp_w": 4,
+    "rz_kohm": 8,
+    "inp_l": 0.5,
+    "load_l": 0.5,
+    "bias_w": 3,
+    "m1": 3,
+    "m6": 4
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 3.0,
+     "bias_l": 0.5,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 3,
+     "m3": 3,
+     "m5": 2,
+     "m6": 4,
+     "m7": 2,
+     "cc_pf": 0.2,
+     "rz_kohm": 7.0,
+     "ib_ua": 10
+    },
+    "metrics": {
+     "gain_db": 73.84,
+     "ugbw_mhz": 48.15,
+     "pm_deg": 18.62,
+     "power_uw": 87.67,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 118.16
+    },
+    "violations": {
+     "pm_deg": 4.138
+    },
+    "meets_spec": false,
+    "operating_point": {
+     "M1": {
+      "id_ua": 9.16,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 480.0,
+      "m": 3
+     },
+     "M2": {
+      "id_ua": 9.18,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 461.0,
+      "m": 3
+     },
+     "M3": {
+      "id_ua": 9.16,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 923.0,
+      "m": 3
+     },
+     "M4": {
+      "id_ua": 9.18,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 942.0,
+      "m": 3
+     },
+     "M5": {
+      "id_ua": 18.34,
+      "gm_over_id": 14.3,
+      "vov_mv": 95.0,
+      "sat_margin_mv": 118.0,
+      "m": 2
+     },
+     "M6": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.2,
+      "vov_mv": 56.0,
+      "sat_margin_mv": 790.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.3,
+      "vov_mv": 97.0,
+      "sat_margin_mv": 788.0,
+      "m": 2
+     },
+     "M8": {
+      "id_ua": 10.0,
+      "gm_over_id": 14.3,
+      "vov_mv": 96.0,
+      "sat_margin_mv": 616.0,
+      "m": 1
+     }
+    },
+    "sims_used": 2,
+    "sims_left": 98
+   },
+   "sims_before": 1,
+   "sims_after": 2
+  },
+  {
+   "turn": 2,
+   "thought": "The updated design shows that while the DC gain and power still meet or exceed the specifications, the phase margin is now around 18.62 degrees, which is still below the required 60 degrees.\n\nTo further improve the phase margin, we can increase the size of M6 even more to enhance its current handling capability and thus reduce the Miller effect. Let's try increasing \\( W/L \\) of M6 to 12/0.5 um and re-run the simulation.\n",
+   "tool": "simulate",
+   "args": {
+    "load_w": 5,
+    "bias_w": 3,
+    "bias_l": 0.5,
+    "m3": 3,
+    "rz_kohm": 7,
+    "load_l": 0.5,
+    "cs_w": 12,
+    "cs_l": 0.5,
+    "m5": 2,
+    "m7": 2,
+    "inp_w": 5,
+    "inp_l": 0.5,
+    "m1": 3,
+    "m6": 4,
+    "cc_pf": 0.2,
+    "ib_ua": 10
+   },
+   "result": {
+    "design": {
+     "inp_w": 5.0,
+     "inp_l": 0.5,
+     "load_w": 5.0,
+     "load_l": 0.5,
+     "bias_w": 3.0,
+     "bias_l": 0.5,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 3,
+     "m3": 3,
+     "m5": 2,
+     "m6": 4,
+     "m7": 2,
+     "cc_pf": 0.2,
+     "rz_kohm": 7.0,
+     "ib_ua": 10
+    },
+    "metrics": {
+     "gain_db": 73.84,
+     "ugbw_mhz": 48.15,
+     "pm_deg": 18.62,
+     "power_uw": 87.67,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 118.16
+    },
+    "violations": {
+     "pm_deg": 4.138
+    },
+    "meets_spec": false,
+    "note": "DUPLICATE: this snapped design was already simulated, so no new information and no budget used. Change a geometry, multiplier, Cc, Rz or Ibias, or call refine.",
+    "operating_point": {
+     "M1": {
+      "id_ua": 9.16,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 480.0,
+      "m": 3
+     },
+     "M2": {
+      "id_ua": 9.18,
+      "gm_over_id": 20.6,
+      "vov_mv": -8.0,
+      "sat_margin_mv": 461.0,
+      "m": 3
+     },
+     "M3": {
+      "id_ua": 9.16,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 923.0,
+      "m": 3
+     },
+     "M4": {
+      "id_ua": 9.18,
+      "gm_over_id": 14.7,
+      "vov_mv": 45.0,
+      "sat_margin_mv": 942.0,
+      "m": 3
+     },
+     "M5": {
+      "id_ua": 18.34,
+      "gm_over_id": 14.3,
+      "vov_mv": 95.0,
+      "sat_margin_mv": 118.0,
+      "m": 2
+     },
+     "M6": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.2,
+      "vov_mv": 56.0,
+      "sat_margin_mv": 790.0,
+      "m": 4
+     },
+     "M7": {
+      "id_ua": 20.37,
+      "gm_over_id": 14.3,
+      "vov_mv": 97.0,
+      "sat_margin_mv": 788.0,
+      "m": 2
+     },
+     "M8": {
+      "id_ua": 10.0,
+      "gm_over_id": 14.3,
+      "vov_mv": 96.0,
+      "sat_margin_mv": 616.0,
+      "m": 1
+     }
+    },
+    "sims_used": 2,
+    "sims_left": 98
+   },
+   "sims_before": 2,
+   "sims_after": 2
+  },
+  {
+   "turn": 3,
+   "thought": "Given that the previous attempt to increase \\( W/L \\) of M6 did not yield a significant improvement in phase margin, we need to explore other strategies. One effective approach is to use a local search optimization method with `refine` to find better values for the transistors and parameters.\n\nLet's use the `refine` function starting from our current design to see if it can improve the phase margin while maintaining or improving other specifications.\n",
+   "tool": "refine",
+   "args": {
+    "sims": 10,
+    "design": {
+     "bias_l": 0.5,
+     "bias_w": 3,
+     "cc_pf": 0.2,
+     "cs_l": 0.5,
+     "cs_w": 7,
+     "ib_ua": 10,
+     "inp_l": 0.5,
+     "inp_w": 5,
+     "load_l": 0.5,
+     "load_w": 5,
+     "m1": 3,
+     "m3": 3,
+     "m5": 2,
+     "m6": 4,
+     "m7": 2,
+     "rz_kohm": 7
+    }
+   },
+   "result": {
+    "best_design": {
+     "inp_w": 5.0,
+     "inp_l": 0.25,
+     "load_w": 7.0,
+     "load_l": 0.5,
+     "bias_w": 7.0,
+     "bias_l": 0.25,
+     "cs_w": 7.0,
+     "cs_l": 0.5,
+     "m1": 3,
+     "m3": 5,
+     "m5": 2,
+     "m6": 4,
+     "m7": 4,
+     "cc_pf": 0.2,
+     "rz_kohm": 7.0,
+     "ib_ua": 15
+    },
+    "metrics": {
+     "gain_db": 60.64,
+     "ugbw_mhz": 85.11,
+     "pm_deg": 28.88,
+     "power_uw": 185.67,
+     "vout_dc": 0.9,
+     "min_sat_margin_mv": 130.01
+    },
+    "violations": {
+     "pm_deg": 3.112
+    },
+    "meets_spec": false,
+    "sims_used": 12,
+    "sims_left": 88
+   },
+   "sims_before": 2,
+   "sims_after": 12
+  }
+ ],
+ "trace": [
+  {
+   "sim": 1,
+   "cost": 4.524700000000001,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 73.8393,
+    "ugbw_mhz": 49.652,
+    "pm_deg": 24.752999999999986,
+    "power_uw": 87.673176,
+    "vout_dc": 0.8997273,
+    "min_sat_margin_mv": 118.1642
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 3,
+    "m5": 2,
+    "m6": 4,
+    "m7": 2,
+    "cc_pf": 0.2,
+    "rz_kohm": 10.0,
+    "ib_ua": 10
+   },
+   "t": 22.69
+  },
+  {
+   "sim": 2,
+   "cost": 5.138499999999999,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 73.8393,
+    "ugbw_mhz": 48.154,
+    "pm_deg": 18.61500000000001,
+    "power_uw": 87.673176,
+    "vout_dc": 0.8997273,
+    "min_sat_margin_mv": 118.1642
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 5.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 3,
+    "m5": 2,
+    "m6": 4,
+    "m7": 2,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 10
+   },
+   "t": 55.17
+  },
+  {
+   "sim": 3,
+   "cost": 5.270300000000001,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 73.9291,
+    "ugbw_mhz": 47.917,
+    "pm_deg": 17.296999999999997,
+    "power_uw": 87.672006,
+    "vout_dc": 0.8995095,
+    "min_sat_margin_mv": 118.1335
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 3,
+    "m5": 2,
+    "m6": 4,
+    "m7": 2,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 10
+   },
+   "t": 102.18
+  },
+  {
+   "sim": 4,
+   "cost": 4.832800000000001,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 73.4611,
+    "ugbw_mhz": 67.4118,
+    "pm_deg": 21.671999999999997,
+    "power_uw": 130.651686,
+    "vout_dc": 0.89945,
+    "min_sat_margin_mv": 83.07319999999999
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 3,
+    "m5": 2,
+    "m6": 4,
+    "m7": 2,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 102.35
+  },
+  {
+   "sim": 5,
+   "cost": 5.5744,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 73.2792,
+    "ugbw_mhz": 87.76,
+    "pm_deg": 14.256,
+    "power_uw": 177.688512,
+    "vout_dc": 0.900161,
+    "min_sat_margin_mv": 52.796300000000016
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 3,
+    "m5": 4,
+    "m6": 4,
+    "m7": 2,
+    "cc_pf": 0.2,
+    "rz_kohm": 5.0,
+    "ib_ua": 15
+   },
+   "t": 102.53
+  },
+  {
+   "sim": 6,
+   "cost": 4.6370000000000005,
+   "best_cost": 4.524700000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 72.2685,
+    "ugbw_mhz": 77.21,
+    "pm_deg": 23.629999999999995,
+    "power_uw": 158.013468,
+    "vout_dc": 0.8984724,
+    "min_sat_margin_mv": 82.6689
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.5,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 4,
+    "m7": 3,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 102.71
+  },
+  {
+   "sim": 7,
+   "cost": 4.519499999999999,
+   "best_cost": 4.519499999999999,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 67.8566,
+    "ugbw_mhz": 80.3166,
+    "pm_deg": 24.805000000000007,
+    "power_uw": 157.593672,
+    "vout_dc": 0.8974446,
+    "min_sat_margin_mv": 67.8319
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 4,
+    "m7": 3,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 102.89
+  },
+  {
+   "sim": 8,
+   "cost": 4.781499999999999,
+   "best_cost": 4.519499999999999,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 67.8135,
+    "ugbw_mhz": 78.703,
+    "pm_deg": 22.185000000000002,
+    "power_uw": 157.58845200000002,
+    "vout_dc": 0.896945,
+    "min_sat_margin_mv": 67.78670000000001
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 3.0,
+    "bias_l": 0.5,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 7,
+    "m5": 2,
+    "m6": 4,
+    "m7": 3,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 103.07
+  },
+  {
+   "sim": 9,
+   "cost": 4.4059,
+   "best_cost": 4.4059,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 61.6252,
+    "ugbw_mhz": 77.2652,
+    "pm_deg": 25.941000000000003,
+    "power_uw": 157.050378,
+    "vout_dc": 0.8971983,
+    "min_sat_margin_mv": 130.49537999999998
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 7.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 4,
+    "m7": 3,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 103.28
+  },
+  {
+   "sim": 10,
+   "cost": 4.5390999999999995,
+   "best_cost": 4.4059,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 62.2556,
+    "ugbw_mhz": 78.889,
+    "pm_deg": 24.60900000000001,
+    "power_uw": 157.519422,
+    "vout_dc": 0.8974141,
+    "min_sat_margin_mv": 145.96980999999997
+   },
+   "design": {
+    "inp_w": 7.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 7.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 4,
+    "m7": 3,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 103.47
+  },
+  {
+   "sim": 11,
+   "cost": 4.111600000000001,
+   "best_cost": 4.111600000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 60.637,
+    "ugbw_mhz": 85.1145,
+    "pm_deg": 28.883999999999986,
+    "power_uw": 185.67387,
+    "vout_dc": 0.896519,
+    "min_sat_margin_mv": 130.00948
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 7.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 4,
+    "m7": 4,
+    "cc_pf": 0.2,
+    "rz_kohm": 7.0,
+    "ib_ua": 15
+   },
+   "t": 103.66
+  },
+  {
+   "sim": 12,
+   "cost": 4.76,
+   "best_cost": 4.111600000000001,
+   "feasible": false,
+   "metrics": {
+    "gain_db": 61.9897,
+    "ugbw_mhz": 83.006,
+    "pm_deg": 22.400000000000006,
+    "power_uw": 185.72481,
+    "vout_dc": 0.8974542,
+    "min_sat_margin_mv": 130.67817999999997
+   },
+   "design": {
+    "inp_w": 5.0,
+    "inp_l": 0.25,
+    "load_w": 7.0,
+    "load_l": 0.5,
+    "bias_w": 7.0,
+    "bias_l": 0.25,
+    "cs_w": 7.0,
+    "cs_l": 0.5,
+    "m1": 3,
+    "m3": 5,
+    "m5": 2,
+    "m6": 6,
+    "m7": 4,
+    "cc_pf": 0.2,
+    "rz_kohm": 5.0,
+    "ib_ua": 15
+   },
+   "t": 103.86
+  }
+ ]
+}

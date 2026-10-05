@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import random
 
-from ..specs import Evaluator
+from ..specs import BudgetExceeded, Evaluator
 from . import cardinality, decode, mutate_gene, random_vector, run_safely
 
 
@@ -81,9 +81,14 @@ def tpe(ev: Evaluator, seed: int = 0) -> None:
 
     def objective(trial):
         v = [trial.suggest_int(f"g{i}", 0, n - 1) for i, n in enumerate(card)]
-        return _f(ev, v)
+        try:
+            return _f(ev, v)
+        except BudgetExceeded:      # stop cleanly instead of letting optuna log a failed trial
+            study.stop()
+            return float("inf")
 
-    study.optimize(objective, n_trials=10 * ev.budget, catch=())
+    # Duplicate suggestions are free (cached), so allow many more trials than simulations.
+    study.optimize(objective, n_trials=10 * ev.budget)
 
 
 def _surrogate_ga(ev, seed=0, **kw):
@@ -107,9 +112,10 @@ def local_search(ev: Evaluator, start: list[int], sims: int, seed: int = 0) -> t
     rng = random.Random(seed)
     card = cardinality()
     stop_at = ev.sims + sims
-    cur, c_cur = list(start), _f(ev, start)
+    cur, c_cur = list(start), float("inf")
     best, c_best = list(cur), c_cur
     try:
+        c_cur = c_best = _f(ev, start)       # may raise if the budget is already spent
         step = 0
         while ev.sims < stop_at and step < 20 * max(sims, 1):
             temp = 0.3 * (0.01 / 0.3) ** (step / max(sims, 1))

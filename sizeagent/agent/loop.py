@@ -10,11 +10,13 @@ import argparse
 import json
 import time
 from pathlib import Path
+from typing import Any
 
 from ..circuit import CL_PF, VDD
-from ..specs import Evaluator, Spec
-from .providers import ChatClient
-from .tools import TOOL_SPECS, AgentTools
+from ..specs import Evaluator, Spec, feasible
+from ..spice import simulate
+from .providers import ChatClient, FallbackClient
+from .tools import TOOL_SPECS, AgentTools, design_from_args
 
 SYSTEM = """You are an analog IC design agent sizing a two-stage Miller-compensated CMOS op-amp \
 in the SkyWater SKY130 process (VDD = {vdd} V, load CL = {cl} pF, input common mode 0.9 V).
@@ -39,19 +41,58 @@ Rules: you have a budget of {budget} simulations. Think briefly before each tool
 `verify_pvt` and then `submit`. Always submit before the budget runs out."""
 
 
+def compact(messages: list[dict], keep: int = 4) -> list[dict]:
+    """Shrink older tool results (drop operating points and design echoes) so the
+    prompt stays small on token-limited tiers. Call/response pairing is untouched."""
+    tool_idx = [i for i, m in enumerate(messages) if m["role"] == "tool"]
+    old = set(tool_idx[:-keep]) if len(tool_idx) > keep else set()
+    out = []
+    for i, m in enumerate(messages):
+        if i in old:
+            try:
+                r = json.loads(m["content"])
+                brief = {k: r[k] for k in ("metrics", "violations", "meets_spec", "pass_count", "error",
+                                           "failing_corners") if k in r}
+                if "design" in r:
+                    brief["design"] = r["design"]
+                m = {**m, "content": json.dumps(brief)}
+            except (json.JSONDecodeError, TypeError):
+                pass
+        out.append(m)
+    return out
+
+
+def verify_final(design, ev: Evaluator) -> dict:
+    """Re-simulate the final design in SPICE outside the search budget, so the reported
+    result never rests on the agent's own claim."""
+    if design is None:
+        return {"submitted_metrics": None, "submitted_meets_spec": False}
+    c, m, _ = ev.cache.get(design.key()) or (None, None, None)
+    if m is None:
+        r = simulate(design, ev.corner, ev.temp)
+        m = r.metrics() if r.ok else None
+    return {"submitted_metrics": m, "submitted_meets_spec": feasible(m, ev.spec)}
+
+
 def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 150,
               max_turns: int = 40, spec: Spec | None = None, out: str | None = None,
               client=None, verbose: bool = True) -> dict:
     spec = spec or Spec()
     ev = Evaluator(spec=spec, budget=budget)
     tools = AgentTools(ev)
-    client = client or ChatClient(provider, model)
-    messages = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
+    client = client or (FallbackClient(model=model) if provider == "auto" else ChatClient(provider, model))
+    messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM.format(vdd=VDD, cl=CL_PF, spec=spec.describe(), budget=budget)},
                 {"role": "user", "content": "Size the op-amp to meet the spec with as few simulations as possible."}]
-    log = []
+    log, api_error = [], None
     t0 = time.time()
     for turn in range(max_turns):
-        msg = client.chat(messages, TOOL_SPECS)
+        try:
+            msg = client.chat(compact(messages), TOOL_SPECS)
+        except RuntimeError as e:      # quota or network failure: keep what we have
+            api_error = str(e)[:300]
+            if verbose:
+                print(f"[{turn}] stopping: {api_error}")
+            break
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content") or "", **({"tool_calls": calls} if calls else {})})
         if msg.get("content") and verbose:
@@ -77,12 +118,24 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
                              "content": json.dumps(result)})
         if tools.submitted is not None:
             break
+        if tools.dup_streak >= 3 and ev.sims < ev.budget:
+            # The model is stuck resubmitting one design; hand over to local search and say so.
+            sims_before = ev.sims
+            result = tools.auto_refine()
+            log.append({"turn": turn, "thought": "", "tool": "auto_refine", "args": {}, "result": result,
+                        "sims_before": sims_before, "sims_after": ev.sims, "auto": True})
+            messages.append({"role": "user", "content": "You repeated the same design 3 times, so local search "
+                             f"ran from your best design automatically. Result: {json.dumps(result)[:1500]}"})
+            if verbose:
+                print(f"[{turn}] auto_refine -> meets_spec={result.get('meets_spec')}")
     best = ev.best()
     final = tools.submitted.to_dict() if tools.submitted else (best["design"] if best else None)
+    verified = verify_final(tools.submitted if tools.submitted else (design_from_args(best["design"]) if best else None),
+                            ev)
     summary = {"provider": provider, "model": getattr(client, "model", None), "budget": budget,
                "sims_used": ev.sims, "first_feasible_sim": ev.first_feasible(),
-               "best": best, "submitted": final, "rationale": tools.rationale,
-               "turns": len({x["turn"] for x in log}), "wall_s": round(time.time() - t0, 1),
+               "best": best, "submitted": final, **verified, "rationale": tools.rationale,
+               "turns": len({x["turn"] for x in log}), "api_error": api_error, "wall_s": round(time.time() - t0, 1),
                "log": log, "trace": ev.trace}
     if out:
         Path(out).parent.mkdir(parents=True, exist_ok=True)
@@ -92,7 +145,7 @@ def run_agent(provider: str = "gemini", model: str | None = None, budget: int = 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="LLM agent for SKY130 op-amp sizing")
-    ap.add_argument("--provider", default="gemini", choices=["gemini", "groq", "ollama"])
+    ap.add_argument("--provider", default="auto", choices=["auto", "gemini", "groq", "ollama"])
     ap.add_argument("--model")
     ap.add_argument("--budget", type=int, default=150)
     ap.add_argument("--max-turns", type=int, default=40)

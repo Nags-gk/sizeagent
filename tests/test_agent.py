@@ -38,3 +38,76 @@ def test_unknown_tool_and_bad_args_are_reported():
     t = AgentTools(Evaluator(budget=5))
     assert "error" in t.call("rm_rf", {})
     assert "error" in t.call("simulate", {"design": {"inp_w": 1}})
+
+
+def test_compact_shrinks_old_tool_results_only():
+    from sizeagent.agent.loop import compact
+    big = json.dumps({"metrics": {"gain_db": 1}, "operating_point": {"M1": "x" * 5000}, "meets_spec": False})
+    msgs = [{"role": "system", "content": "s"}] + [{"role": "tool", "content": big} for _ in range(6)]
+    out = compact(msgs, keep=2)
+    assert all("operating_point" not in m["content"] for m in out[1:5])
+    assert all("operating_point" in m["content"] for m in out[5:])
+    assert len(msgs) == len(out)
+
+
+def test_api_failure_keeps_partial_results(tmp_path):
+    class Dying(FakeClient):
+        def chat(self, messages, tools):
+            if not self.script:
+                raise RuntimeError("quota")
+            return super().chat(messages, tools)
+
+    c = Dying()
+    c.script = c.script[:1]
+    s = run_agent(client=c, budget=10, out=str(tmp_path / "r.json"), verbose=False)
+    assert s["api_error"] == "quota" and s["sims_used"] == 1 and (tmp_path / "r.json").exists()
+
+
+def test_refine_after_budget_exhausted_returns_error_not_crash(monkeypatch):
+    import sizeagent.agent.tools as tl
+    from sizeagent.optimizers import encode
+    from sizeagent.optimizers.search import local_search
+    from sizeagent.specs import Evaluator
+
+    t = tl.AgentTools(Evaluator(budget=0))
+    assert "error" in t.refine(reference_design().to_dict(), 5)
+    # local_search itself must also swallow an exhausted budget on the very first evaluation
+    c, best = local_search(Evaluator(budget=0), encode(reference_design()), 5)
+    assert c == float("inf") and best == encode(reference_design())
+
+
+def test_submitted_design_is_independently_verified(tmp_path):
+    s = run_agent(client=FakeClient(), budget=20, out=str(tmp_path / "r.json"), verbose=False)
+    assert s["submitted_metrics"]["gain_db"] > 60
+    assert s["submitted_meets_spec"] is False      # reference design violates the saturation margin
+
+
+def test_flat_design_arguments_are_accepted():
+    from sizeagent.agent.tools import AgentTools
+    from sizeagent.specs import Evaluator
+    t = AgentTools(Evaluator(budget=5))
+    flat = reference_design().to_dict()
+    r = t.call("simulate", dict(flat))             # no "design" wrapper
+    assert "metrics" in r and r["sims_used"] == 1
+    assert "design" in t.call("simulate", {"nonsense": 1}).get("error", "design")
+
+
+def test_duplicate_designs_are_flagged_and_trigger_auto_refine(tmp_path):
+    from sizeagent.agent.tools import AgentTools
+    from sizeagent.specs import Evaluator
+    t = AgentTools(Evaluator(budget=30))
+    d = reference_design().to_dict()
+    assert "note" not in t.simulate(d)
+    assert "DUPLICATE" in t.simulate(d)["note"] and t.dup_streak == 1
+    r = t.auto_refine(5)
+    assert "best_design" in r and t.dup_streak == 0
+
+
+def test_loop_auto_refines_a_stuck_model(tmp_path):
+    class Stuck(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.script = [("simulate", {"design": self.design})] * 4 + [("submit", {"design": self.design, "rationale": "x"})]
+
+    s = run_agent(client=Stuck(), budget=30, out=str(tmp_path / "r.json"), verbose=False)
+    assert any(x.get("auto") for x in s["log"]) and s["sims_used"] > 1

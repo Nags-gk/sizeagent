@@ -7,12 +7,18 @@ an integer multiplier. Passives and the bias current come from fixed grids.
 from __future__ import annotations
 
 import json
+import os
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
-PDK_DIR = Path(__file__).resolve().parent.parent / "pdk_models"
+PDK_DIR = Path(os.environ.get("SIZEAGENT_PDK") or Path(__file__).resolve().parent.parent / "pdk_models")
+
+
+class SetupError(RuntimeError):
+    """The simulator or the SKY130 model libraries are not installed."""
 
 # Device groups. Matched devices share one geometry.
 #   inp  : M1/M2 NMOS differential pair
@@ -32,7 +38,11 @@ VCM = 0.9
 @lru_cache(maxsize=1)
 def valid_geometries() -> dict[str, list[tuple[float, float]]]:
     """Characterized (W_um, L_um) per-finger pairs for each device type."""
-    data = json.loads((PDK_DIR / "bins.json").read_text())
+    bins = PDK_DIR / "bins.json"
+    if not bins.exists():
+        raise SetupError(f"SKY130 models not found at {PDK_DIR}. Run ./scripts/setup_pdk.sh "
+                         "(or point SIZEAGENT_PDK at a built pdk_models directory).")
+    data = json.loads(bins.read_text())
     # Restrict to analog-friendly sizes: skip minimum-width fingers below 0.5 um.
     return {dev: [tuple(p) for p in pairs if p[0] >= 0.5] for dev, pairs in data.items()}
 
@@ -84,7 +94,8 @@ def random_design(rng: random.Random) -> Design:
 
 def snap(group_or_key: str, value: float) -> float:
     """Snap a value to the nearest allowed grid point (used by the LLM agent)."""
-    grid = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}.get(group_or_key, MULT_CHOICES)
+    grids: dict[str, Sequence[float]] = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}
+    grid: Sequence[float] = grids.get(group_or_key, MULT_CHOICES)
     return min(grid, key=lambda g: abs(g - value))
 
 

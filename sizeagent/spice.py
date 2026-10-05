@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import math
 import re
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .circuit import DEVICE_TYPE, DEVICES, VDD, Design, multiplicity, netlist
+from .circuit import DEVICE_TYPE, DEVICES, VDD, Design, SetupError, multiplicity, netlist
 
 OP_PARAMS = ["id", "gm", "gds", "vth", "vdsat", "vds", "vgs"]
 
@@ -93,6 +94,8 @@ def _parse(out: str, mult: dict, ib_ua: float) -> SimResult:
 
 def simulate(d: Design, corner: str = "tt", temp: float = 27.0, mc: bool = False,
              timeout: float = 60.0, seed: int = 1) -> SimResult:
+    if shutil.which("ngspice") is None:
+        raise SetupError("ngspice not found on PATH (macOS: brew install ngspice; Debian/Ubuntu: apt install ngspice)")
     net = netlist(d, corner, temp, mc).replace(".end\n", _control_block() + "\n.end\n")
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "tb.sp"

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import statistics
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from .circuit import Design
 from .specs import Spec, violations
@@ -16,14 +17,14 @@ def corner_sweep(d: Design, spec: Spec, workers: int = 2) -> dict:
     jobs = [(c, t) for c in CORNERS for t in TEMPS]
     with ThreadPoolExecutor(workers) as ex:
         results = list(ex.map(lambda ct: simulate(d, corner=ct[0], temp=ct[1]), jobs))
-    rows = []
+    rows: list[dict[str, Any]] = []
     for (c, t), r in zip(jobs, results):
         m = r.metrics() if r.ok else None
-        v = violations(m, spec) if m else None
+        v: dict[str, float] = violations(m, spec) if m else {}
         rows.append({"corner": c, "temp_c": t, "metrics": m,
                      "pass": bool(m) and sum(v.values()) == 0,
-                     "failing": [k for k, x in (v or {}).items() if x > 0] if m else ["sim_failed"]})
-    ok = [r["metrics"] for r in rows if r["metrics"]]
+                     "failing": [k for k, x in v.items() if x > 0] if m else ["sim_failed"]})
+    ok: list[dict[str, float]] = [r["metrics"] for r in rows if r["metrics"]]
     worst = {
         "gain_db": min(m["gain_db"] for m in ok), "ugbw_mhz": min(m["ugbw_mhz"] for m in ok),
         "pm_deg": min(m["pm_deg"] for m in ok), "power_uw": max(m["power_uw"] for m in ok),

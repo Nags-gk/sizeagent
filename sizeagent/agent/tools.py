@@ -1,6 +1,8 @@
 """Tools the sizing agent can call. Each returns a JSON-serializable dict."""
 from __future__ import annotations
 
+from typing import Any
+
 from ..circuit import (
     CC_PF,
     GROUPS,
@@ -30,7 +32,7 @@ DESIGN_SCHEMA = {
     "required": [f"{g}_{p}" for g in GROUPS for p in ("w", "l")] + MULT_KEYS + ["cc_pf", "rz_kohm", "ib_ua"],
 }
 
-TOOL_SPECS = [
+TOOL_SPECS: list[dict[str, Any]] = [
     {"type": "function", "function": {
         "name": "simulate",
         "description": "Run one ngspice simulation (costs 1 from the budget). Returns snapped design, "
@@ -88,6 +90,7 @@ class AgentTools:
     def __init__(self, ev: Evaluator, max_pvt_calls: int = 3):
         self.ev, self.pvt_calls, self.max_pvt_calls = ev, 0, max_pvt_calls
         self.submitted: Design | None = None
+        self.dup_streak = 0
         self.rationale = ""
 
     def _budget(self) -> dict:
@@ -95,23 +98,39 @@ class AgentTools:
 
     def simulate(self, design: dict) -> dict:
         d = design_from_args(design)
+        duplicate = d.key() in self.ev.cache
+        self.dup_streak = self.dup_streak + 1 if duplicate else 0
         try:
             c, m, res = self.ev(d)
         except BudgetExceeded:
             return {"error": "simulation budget exhausted; submit your best design", **self._budget()}
         if m is None:
-            return {"design": d.to_dict(), "error": res.error or "simulation failed", **self._budget()}
+            return {"design": d.to_dict(), "error": (res.error if res else "") or "simulation failed", **self._budget()}
         v = violations(m, self.ev.spec)
         return {"design": d.to_dict(), "metrics": {k: _r(x, 2) for k, x in m.items()},
                 "violations": {k: _r(x) for k, x in v.items() if x > 0},
                 "meets_spec": not any(x > 0 for x in v.values()),
+                **({"note": "DUPLICATE: this snapped design was already simulated, so no new information and no "
+                            "budget used. Change a geometry, multiplier, Cc, Rz or Ibias, or call refine."}
+                   if duplicate else {}),
                 "operating_point": op_summary(res), **self._budget()}
+
+    def auto_refine(self, sims: int = 20) -> dict:
+        """Guardrail used by the loop when the model keeps resubmitting the same design:
+        run a local search from the best design seen so far."""
+        best = self.ev.best()
+        if best is None:
+            return {"error": "nothing simulated yet"}
+        self.dup_streak = 0
+        return self.refine(best["design"], sims)
 
     def list_geometries(self, device: str) -> dict:
         return {"device": device, "w_l_um": valid_geometries()[device],
                 "multipliers": MULT_CHOICES, "cc_pf": CC_PF, "rz_kohm": RZ_KOHM, "ib_ua": IB_UA}
 
     def refine(self, design: dict, sims: int) -> dict:
+        if self.ev.sims >= self.ev.budget:
+            return {"error": "simulation budget exhausted; submit your best design", **self._budget()}
         sims = max(1, min(int(sims), 40, self.ev.budget - self.ev.sims))
         c, best = local_search(self.ev, encode(design_from_args(design)), sims, seed=self.ev.sims)
         d = decode(best)
@@ -136,11 +155,25 @@ class AgentTools:
         self.rationale = rationale
         return {"ok": True}
 
+    @staticmethod
+    def _normalize(name: str, args: dict) -> dict:
+        """Small models often put the design fields at the top level instead of under
+        `design`; accept that rather than burning turns on schema errors."""
+        if name not in {"simulate", "refine", "verify_pvt", "submit"} or "design" in args:
+            return args
+        keys = set(DESIGN_SCHEMA["properties"])
+        flat = {k: v for k, v in args.items() if k in keys}
+        if not flat:
+            return args
+        rest = {k: v for k, v in args.items() if k not in keys}
+        return {"design": flat, **rest}
+
     def call(self, name: str, args: dict) -> dict:
         fn = getattr(self, name, None)
-        if name not in {t["function"]["name"] for t in TOOL_SPECS} or fn is None:
+        if name not in {str(t["function"]["name"]) for t in TOOL_SPECS} or fn is None:
             return {"error": f"unknown tool {name}"}
+        args = self._normalize(name, args)
         try:
             return fn(**args)
         except (KeyError, TypeError, ValueError) as e:
-            return {"error": f"bad arguments for {name}: {e}"}
+            return {"error": f"bad arguments for {name}: {e}. Call it as {{\"design\": {{...all design fields...}}}}"}

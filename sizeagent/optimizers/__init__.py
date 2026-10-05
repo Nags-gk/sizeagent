@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Sequence
 from functools import cache
 
 from ..circuit import CC_PF, GROUPS, IB_UA, MULT_CHOICES, MULT_KEYS, RZ_KOHM, Design, random_design, valid_geometries
 from ..specs import BudgetExceeded, Evaluator
 
 # Genome: 4 geometry genes, 5 multiplier genes, Cc, Rz, Ibias (all integer indices).
-GENES = [("geo", g) for g in GROUPS] + [("mult", k) for k in MULT_KEYS] + [("cc", None), ("rz", None), ("ib", None)]
+GENES: list[tuple[str, str]] = ([("geo", g) for g in GROUPS] + [("mult", k) for k in MULT_KEYS]
+                                 + [("cc", ""), ("rz", ""), ("ib", "")])
+SCALAR_GRIDS: dict[str, Sequence[float]] = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}
 
 
 def cardinality() -> list[int]:
@@ -22,7 +25,7 @@ def cardinality() -> list[int]:
         elif kind == "mult":
             out.append(len(MULT_CHOICES))
         else:
-            out.append(len({"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}[kind]))
+            out.append(len(SCALAR_GRIDS[kind]))
     return out
 
 
@@ -34,8 +37,7 @@ def encode(d: Design) -> list[int]:
         elif kind == "mult":
             v.append(MULT_CHOICES.index(d.mult[name]))
         else:
-            grid = {"cc": CC_PF, "rz": RZ_KOHM, "ib": IB_UA}[kind]
-            v.append(grid.index(getattr(d, kind)))
+            v.append(SCALAR_GRIDS[kind].index(getattr(d, kind)))
     return v
 
 

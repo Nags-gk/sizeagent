@@ -1,8 +1,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-.pdk_src/
-pdk_models/
+.pdk_src
+pdk_models
 results/old_*
 *.egg-info/
 .env
@@ -10,3 +10,5 @@ results/old_*
 .ruff_cache/
 .mypy_cache/
 .coverage
+results/*.log
+results/agent_*.json.tmp
