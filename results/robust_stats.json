@@ -1,0 +1,141 @@
+{
+ "summary": {
+  "ga": {
+   "n": 20,
+   "budget": 600,
+   "robust_feasible": 15,
+   "robust_feasible_ci": [
+    0.5312949900419365,
+    0.888139947210597
+   ],
+   "median_sims": 243.0,
+   "median_sims_ci": [
+    169.0,
+    569.0
+   ],
+   "sims": [
+    601,
+    601,
+    135,
+    140,
+    265,
+    601,
+    219,
+    212,
+    221,
+    161,
+    601,
+    383,
+    128,
+    159,
+    539,
+    150,
+    405,
+    601,
+    177,
+    599
+   ],
+   "full_grid_all_pass": 15,
+   "full_grid_all_pass_ci": [
+    0.5312949900419365,
+    0.888139947210597
+   ],
+   "mean_grid_pass": 13.95,
+   "full_total": 15,
+   "median_power_uw": 153.90606599999998
+  },
+  "sa": {
+   "n": 20,
+   "budget": 600,
+   "robust_feasible": 8,
+   "robust_feasible_ci": [
+    0.21880396741419272,
+    0.613422057684794
+   ],
+   "median_sims": 601.0,
+   "median_sims_ci": [
+    560.0,
+    601.0
+   ],
+   "sims": [
+    601,
+    374,
+    588,
+    532,
+    601,
+    601,
+    601,
+    480,
+    596,
+    601,
+    601,
+    601,
+    601,
+    601,
+    601,
+    601,
+    382,
+    411,
+    601,
+    470
+   ],
+   "full_grid_all_pass": 8,
+   "full_grid_all_pass_ci": [
+    0.21880396741419272,
+    0.613422057684794
+   ],
+   "mean_grid_pass": 11.3,
+   "full_total": 15,
+   "median_power_uw": 169.22250720000002
+  },
+  "surrogate_ga": {
+   "n": 20,
+   "budget": 600,
+   "robust_feasible": 20,
+   "robust_feasible_ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "median_sims": 149.0,
+   "median_sims_ci": [
+    117.5,
+    236.5
+   ],
+   "sims": [
+    121,
+    120,
+    424,
+    77,
+    583,
+    159,
+    443,
+    250,
+    117,
+    386,
+    286,
+    223,
+    82,
+    205,
+    71,
+    114,
+    139,
+    57,
+    118,
+    173
+   ],
+   "full_grid_all_pass": 20,
+   "full_grid_all_pass_ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "mean_grid_pass": 15.0,
+   "full_total": 15,
+   "median_power_uw": 122.071842
+  }
+ },
+ "pvalues": {
+  "ga vs sa": 0.0016975534440346245,
+  "ga vs surrogate_ga": 0.008628144380171192,
+  "sa vs surrogate_ga": 3.647532293360577e-07
+ }
+}

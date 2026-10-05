@@ -9,8 +9,8 @@ Items are ordered by impact on credibility first, breadth second.
    Report `submitted_meets_spec` (independently verified), not the agent's own claim.
 2. **Reconcile concurrent branches.** `feature/roadmap-improvements` and `fix/audit-issues` both carry work; merge into
    `main` through a reviewed PR and delete the stale branch.
-3. **Full-grid corner-aware runs, 20 seeds.** The 6-seed study leaves 3 of 6 surrogate-GA designs failing one unseen
-   grid point; the tier-2 check (full 15-point grid) is implemented, so run it at benchmark scale and report CIs.
+3. ~~**Full-grid corner-aware runs, 20 seeds.**~~ Done: surrogate GA 20/20 robust-feasible on all 15 grid points
+   (median 149 sims); see README. Remaining gap: supply (VDD) variation and mismatch are not in the search.
 
 ## Next (1-2 weeks)
 4. **Better surrogate.** Calibrated uncertainty (conformal / deep-ensemble check), GP and gradient-boosting baselines,

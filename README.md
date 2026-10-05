@@ -86,19 +86,21 @@ Treat this as a small-sample, small-model data point: 5 runs cannot separate the
 
 ### Corner-aware optimization
 
-`sizeagent/robust.py` adds a `RobustEvaluator`. A design is simulated at tt/27 C first; only nominally feasible designs are promoted to 6 extreme corners (ss and ff at -40/125 C, plus fs and sf at 27 C). A design counts as feasible only if it meets spec at all of them, and **every corner simulation is charged to the same budget**. Budget here is 600 simulations, 6 seeds, and the final design of every run is checked on the full 15-corner grid (`python scripts/robust_study.py`).
+`sizeagent/robust.py` adds a `RobustEvaluator` that scores a design by what it does across PVT, not just at tt/27 C. A design is simulated nominally first; only nominally feasible designs are promoted to 6 extreme corners (ss and ff at -40/125 C, plus fs and sf at 27 C), and only if those pass to the rest of the 5 x 3 grid. A design counts as feasible only if it meets spec at **all 15 grid points**, and **every corner simulation is charged to the same budget**. 20 seeds, 600-simulation budget, 95% intervals (`python scripts/robust_study.py --seeds 20 --out results/robust_full_20.jsonl && python scripts/robust_stats.py`):
 
-| Strategy | Robust-feasible runs | Median sims to robust spec | Full 15-corner grid passes (per seed) | Median power (feasible) |
+| Strategy | Robust-feasible (all 15 grid points) | Median sims to robust spec | Mean grid points passed | Median power (feasible runs) |
 |---|---|---|---|---|
-| Surrogate-assisted GA | 6/6 | 113 | 15, 14, 14, 15, 14, 15 | 96 µW |
-| Genetic algorithm | 4/6 | 305 | 14, 13, 14, 14, 15, 3 | 136 µW |
-| Simulated annealing | 3/6 | 591 | 15, 5, 15, 15, 14, 7 | 185 µW |
+| Surrogate-assisted GA | 20/20 (84-100%) | 149 (118-237) | 15.0/15 | 122 µW |
+| Genetic algorithm | 15/20 (53-89%) | 243 (169-569) | 13.9/15 | 154 µW |
+| Simulated annealing | 8/20 (22-61%) | >600 | 11.3/15 | 169 µW |
 
-Corner-aware search lifts the surrogate-assisted GA from 10/15 corners (nominal-only) to 14-15/15 on every seed, at roughly 2x the simulation count and about 1.4x the power of the nominal optimum. It is still not a guarantee: the optimizer sees 7 of the 15 grid points, and three of the six surrogate-GA designs fail one unseen grid point. Adding that point (or all 15) to the evaluator is the obvious next step.
+The surrogate-assisted GA found a design passing the full PVT grid in every seed; the difference from the plain GA (p = 0.009) and from simulated annealing (p < 0.0001) is significant, as is GA vs. SA (p = 0.002). Compared with the nominal-only search (62 simulations, 68 µW), robustness costs about 2.4x the simulations and about 1.8x the power, which is the usual price of margin. Because the evaluator now checks the whole grid, "robust-feasible" and "final design passes the grid" coincide; the final designs were still re-verified with a separate `corner_sweep`.
+
+Scope: PVT here means process corners and temperature at the nominal 1.8 V supply (no supply sweep), and mismatch Monte Carlo is reported separately for the nominal optima, not folded into the search.
 
 ### Honest caveats
 - Only the transistors use foundry models. C<sub>c</sub>, R<sub>z</sub> and C<sub>L</sub> are ideal elements, and there are no layout parasitics.
-- The default benchmark optimizes at tt, 27 °C; the corner-aware study above covers 7 of the 15 grid points and 6 seeds, not a formal worst-case guarantee.
+- The default benchmark optimizes at tt, 27 °C; the corner-aware study above covers all 15 process/temperature points at the nominal supply, but not supply variation or mismatch.
 - Phase margin and UGBW come from an open-loop AC analysis. There's no transient, slew-rate or noise analysis yet.
 - The main benchmark uses 20 seeds per method; the robust and PVT studies use 6, so their conclusions are indicative, not statistically tight.
 

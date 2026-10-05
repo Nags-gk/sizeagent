@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Full-grid corner-aware study at 20 seeds (`results/robust_full_20.jsonl`, `scripts/robust_stats.py`): surrogate GA 20/20 robust-feasible, GA 15/20, SA 8/20.
 - Corner-aware optimization (`sizeagent/robust.py`, `scripts/robust_study.py`) and a dashboard section for it.
 - Statistics module and `scripts/stats.py`: bootstrap/Wilson CIs, Mann-Whitney tests, censored sims-to-spec.
 - Benchmark extended to 20 seeds per algorithm.
