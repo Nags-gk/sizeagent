@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- Surrogate study (`scripts/surrogate_compare.py`): MLP ensemble vs GP / random forest / boosting on a shared 2,000-design dataset, with calibration and feasibility-ranking metrics; `CalibratedSurrogate` (split-conformal sd).
+- Exploration/calibration ablation for the surrogate GA (`scripts/surrogate_ablation.py`): no significant effect on sims-to-spec.
 - Full-grid corner-aware study at 20 seeds (`results/robust_full_20.jsonl`, `scripts/robust_stats.py`): surrogate GA 20/20 robust-feasible, GA 15/20, SA 8/20.
 - Corner-aware optimization (`sizeagent/robust.py`, `scripts/robust_study.py`) and a dashboard section for it.
 - Statistics module and `scripts/stats.py`: bootstrap/Wilson CIs, Mann-Whitney tests, censored sims-to-spec.

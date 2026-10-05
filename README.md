@@ -87,6 +87,17 @@ One shared dataset of 2,000 SPICE-simulated designs, 3 random 80/20 splits, judg
 
 Takeaways: the MLP ensemble is the best or tied model on accuracy and on ranking feasible designs, and about 18x faster than the GP at equal ranking quality, so replacing it would not help. Its weakness is overconfidence: its nominal 90% intervals cover only 70-84% of true values (78% averaged over the six targets). `CalibratedSurrogate` (split-conformal rescaling of the standard deviation) restores about 89% coverage at a cost of roughly 0.01 in phase-margin R² and 0.003 in AUROC. Phase margin remains the hardest target (R² about 0.7); only 3 splits were run, so differences of about 0.01 are noise.
 
+**Does the uncertainty actually help the optimizer?** Not measurably. Ablation of the surrogate-assisted GA's exploration bonus, 20 seeds each, 300-simulation budget (`python scripts/surrogate_ablation.py`):
+
+| Variant | Met spec | Median sims to spec (95% CI) | p vs. baseline |
+|---|---|---|---|
+| Baseline (raw ensemble sd, bonus 0.5) | 20/20 | 62 (58-69) | n/a |
+| No exploration bonus (mean prediction only) | 20/20 | 63 (57-78) | 0.74 |
+| Calibrated sd, bonus 0.5 | 20/20 | 68 (61-80) | 0.25 |
+| Calibrated sd, bonus 1.0 | 20/20 | 72 (64-82) | 0.09 |
+
+Within this budget the surrogate's *ranking* does the work and its uncertainty adds nothing detectable, so the default stays as it was; calibration remains available (`surrogate_ga(..., calibrate=True)`) and is worth revisiting where exploration matters more, such as much larger spaces or tighter budgets. Negative results like this are why the optimizers are compared with confidence intervals rather than single runs.
+
 ### LLM agent (local, no API key)
 
 `qwen2.5:7b` via Ollama, budget **100** simulations (not 300), 5 runs, every final design re-simulated in ngspice (`submitted_meets_spec`). Raw runs are in `results/`.

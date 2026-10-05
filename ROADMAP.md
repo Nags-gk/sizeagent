@@ -13,8 +13,9 @@ Items are ordered by impact on credibility first, breadth second.
    (median 149 sims); see README. Remaining gap: supply (VDD) variation and mismatch are not in the search.
 
 ## Next (1-2 weeks)
-4. **Better surrogate.** Calibrated uncertainty (conformal / deep-ensemble check), GP and gradient-boosting baselines,
-   active-learning ablation, and a dedicated phase-margin model (current R^2 0.69).
+4. ~~**Better surrogate.**~~ Done (negative result): GP, forest and boosting do not beat the MLP ensemble; conformal
+   calibration fixes coverage (0.78 -> 0.89) but does not change sims-to-spec. Still open: a dedicated phase-margin model
+   (R^2 ~0.7) and an active-learning ablation on dataset size.
 5. **Worst-case surrogate.** Predict worst-over-corners metrics directly so screening is corner-aware and the 7x
    simulation overhead of robust search shrinks.
 6. **Multi-objective search.** NSGA-II / Pareto front for power vs UGBW vs phase margin instead of one scalar cost.
