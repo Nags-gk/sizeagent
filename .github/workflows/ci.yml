@@ -24,7 +24,12 @@ jobs:
         uses: actions/cache@v4
         with: {path: .pdk_src, key: sky130-fd-pr-v1}
       - name: Build SKY130 model libraries
-        run: ./scripts/setup_pdk.sh
+        shell: bash
+        run: |
+          ./scripts/setup_pdk.sh 2>&1 | tee pdk.log || {
+            echo "::error title=setup_pdk failed::$(tail -n 20 pdk.log | tr '\n' ' ' | cut -c1-1200)"
+            exit 1
+          }
       - name: Install Python deps
         run: pip install --index-url https://download.pytorch.org/whl/cpu torch && pip install -e .[dev]
       - name: Test
