@@ -73,6 +73,20 @@ Surrogate vs. SPICE on held-out designs:
 
 None of the nominal-only optima pass all 15 corners: optimizing at tt/27 C pushes designs to the edge of the spec.
 
+### Surrogate study: which model, and can its uncertainty be trusted?
+
+One shared dataset of 2,000 SPICE-simulated designs, 3 random 80/20 splits, judged on what the optimizer actually needs: accuracy, ranking of truly feasible designs (400 test designs, about 62 feasible), and whether the predicted uncertainty is honest (`python scripts/surrogate_compare.py --build`).
+
+| Model | Phase-margin R² | Feasibility AUROC | Precision@25 | 90% interval coverage (PM) | Fit time |
+|---|---|---|---|---|---|
+| **MLP ensemble (current)** | 0.716 | 0.974 | 0.83 | 0.70 | 8 s |
+| Gaussian process (Matern, ARD) | 0.661 | 0.973 | 0.84 | 0.77 | 146 s |
+| Bagged gradient boosting | 0.634 | 0.923 | 0.63 | 0.49 | 52 s |
+| Random forest | 0.542 | 0.918 | 0.61 | 0.91 | 2 s |
+| **MLP ensemble + conformal calibration** | 0.704 | 0.971 | n/a | 0.89 (all targets, mean) | 5 s |
+
+Takeaways: the MLP ensemble is the best or tied model on accuracy and on ranking feasible designs, and about 18x faster than the GP at equal ranking quality, so replacing it would not help. Its weakness is overconfidence: its nominal 90% intervals cover only 70-84% of true values (78% averaged over the six targets). `CalibratedSurrogate` (split-conformal rescaling of the standard deviation) restores about 89% coverage at a cost of roughly 0.01 in phase-margin R² and 0.003 in AUROC. Phase margin remains the hardest target (R² about 0.7); only 3 splits were run, so differences of about 0.01 are noise.
+
 ### LLM agent (local, no API key)
 
 `qwen2.5:7b` via Ollama, budget **100** simulations (not 300), 5 runs, every final design re-simulated in ngspice (`submitted_meets_spec`). Raw runs are in `results/`.

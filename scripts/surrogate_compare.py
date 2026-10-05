@@ -18,7 +18,7 @@ from sizeagent.baselines import MODELS  # noqa: E402
 from sizeagent.dataset import build_dataset, load_dataset, save_dataset  # noqa: E402
 from sizeagent.optimizers import decode  # noqa: E402
 from sizeagent.specs import Spec  # noqa: E402
-from sizeagent.surrogate import TARGETS, Surrogate, features, targets  # noqa: E402
+from sizeagent.surrogate import TARGETS, CalibratedSurrogate, Surrogate, features, targets  # noqa: E402
 from sizeagent.surrogate_eval import calibration, feasibility_ranking, r2_mae  # noqa: E402
 
 DATA = Path("results/surrogate_dataset.jsonl")
@@ -26,6 +26,8 @@ DATA = Path("results/surrogate_dataset.jsonl")
 
 def make_models(fast: bool):
     ms = {"mlp_ensemble": lambda s: Surrogate(n_models=4, epochs=100 if fast else 300, seed=s)}
+    ms["mlp_calibrated"] = lambda s: CalibratedSurrogate(
+        lambda: Surrogate(n_models=4, epochs=100 if fast else 300, seed=s), seed=s)
     ms.update({k: (lambda s, c=c: c(seed=s)) for k, c in MODELS.items()})
     return ms
 
@@ -49,6 +51,7 @@ def main():
     ap.add_argument("--n-local", type=int, default=800)
     ap.add_argument("--splits", type=int, default=3)
     ap.add_argument("--fast", action="store_true")
+    ap.add_argument("--models", default="", help="comma-separated subset; default all")
     ap.add_argument("--out", default="results/surrogate_compare.json")
     a = ap.parse_args()
     if a.build or not DATA.exists():
@@ -60,6 +63,8 @@ def main():
     Y = np.array([targets(m) for _, m in data])
     res: dict = {"n": len(data), "splits": a.splits, "models": {}}
     for name, mk in make_models(a.fast).items():
+        if a.models and name not in a.models.split(","):
+            continue
         runs = []
         for s in range(a.splits):
             perm = np.random.default_rng(s).permutation(len(data))

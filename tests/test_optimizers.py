@@ -90,3 +90,10 @@ def test_robust_evaluator_never_drops_charged_sims():
     ev2 = robust.RobustEvaluator(budget=200)
     ev2(d)
     assert ev2.sims >= 1 + len(ev2.corners) and not ev2.trace[0]["unverified"]
+
+
+@pytest.mark.parametrize("kw", [{"explore": 0.0}, {"calibrate": True}])
+def test_surrogate_ga_variants_run(kw):
+    ev = Evaluator(budget=40)
+    ALGORITHMS["surrogate_ga"](ev, seed=0, warmup=15, per_gen=5, pool=40, epochs=8, **kw)
+    assert ev.sims == 40

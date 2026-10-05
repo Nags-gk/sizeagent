@@ -39,3 +39,27 @@ def test_feasibility_ranking_perfect_predictor():
     Y = np.array([targets(m) for m in [good, bad, good, bad, bad]])
     r = feasibility_ranking(Y, Y, Spec(), ks=(2,))
     assert r["auroc"] == 1.0 and r["precision_at_2"] == 1.0 and r["n_feasible"] == 2
+
+
+def test_conformal_calibration_fixes_overconfident_sd():
+    from sizeagent.surrogate import CalibratedSurrogate
+
+    class Overconfident:
+        ys = np.ones(1)
+
+        def fit(self, X, Y):
+            self.m = Y.mean(0)
+            return self
+
+        def predict(self, X):
+            return np.tile(self.m, (len(X), 1)), np.full((len(X), 1), 0.1)   # true noise sd is 1
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(2000, 2))
+    Y = rng.normal(size=(2000, 1))
+    s = CalibratedSurrogate(Overconfident, seed=0).fit(X[:1500], Y[:1500])
+    mu, sd = s.predict(X[1500:])
+    cov = calibration(Y[1500:, 0], mu[:, 0], sd[:, 0])["coverage90"]
+    assert 0.85 < cov < 0.95
+    raw = Overconfident().fit(X, Y).predict(X[1500:])
+    assert calibration(Y[1500:, 0], raw[0][:, 0], raw[1][:, 0])["coverage90"] < 0.2

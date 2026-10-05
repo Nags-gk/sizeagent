@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import random
+from statistics import NormalDist
 
 import numpy as np
 import torch
@@ -90,7 +91,8 @@ def predicted_cost(y: np.ndarray, spec: Spec) -> float:
 
 @run_safely
 def surrogate_ga(ev: Evaluator, seed: int = 0, warmup: int = 40, per_gen: int = 10,
-                 pool: int = 400, epochs: int = 150, min_train: int = 8) -> None:
+                 pool: int = 400, epochs: int = 150, min_train: int = 8, explore: float = 0.5,
+                 calibrate: bool = False) -> None:
     """Surrogate-assisted GA: an MLP ensemble screens `pool` GA offspring per
     generation; only the `per_gen` most promising (lower-confidence-bound on
     predicted violation) are simulated in SPICE. Retrains every generation."""
@@ -114,7 +116,11 @@ def surrogate_ga(ev: Evaluator, seed: int = 0, warmup: int = 40, per_gen: int = 
                 good.append((v, seen[-1][2]))
         X = np.array([features(decode(v)) for v, _ in good])
         Y = np.array([targets(m) for _, m in good])
-        sur = Surrogate(n_models=3, epochs=epochs, seed=seed + gen).fit(X, Y)
+        sur: Surrogate | CalibratedSurrogate
+        if calibrate:
+            sur = CalibratedSurrogate(lambda: Surrogate(n_models=3, epochs=epochs, seed=seed + gen), seed=seed + gen).fit(X, Y)
+        else:
+            sur = Surrogate(n_models=3, epochs=epochs, seed=seed + gen).fit(X, Y)
         parents = sorted(seen, key=lambda t: t[1])[:12]
         cands: list[list[int]] = []
         keys = set(ev.cache)
@@ -129,7 +135,38 @@ def surrogate_ga(ev: Evaluator, seed: int = 0, warmup: int = 40, per_gen: int = 
                 cands.append(child)
         mu, sd = sur.predict(np.array([features(decode(v)) for v in cands]))
         # Optimistic score: predicted violation evaluated at mean, minus an exploration bonus.
-        score = [predicted_cost(mu[i], ev.spec) - 0.5 * float((sd[i] / sur.ys).mean()) for i in range(len(cands))]
+        score = [predicted_cost(mu[i], ev.spec) - explore * float((sd[i] / sur.ys).mean()) for i in range(len(cands))]
         for i in np.argsort(score)[:per_gen]:
             run(cands[i])
         gen += 1
+
+
+class CalibratedSurrogate:
+    """Split-conformal rescaling of any surrogate's predicted std.
+
+    Fits the base model on (1 - cal_frac) of the data, then per target scales its std so the
+    +/- 1.645 sd interval covers `level` of the held-out calibration errors. The mean prediction is
+    unchanged; only the uncertainty is corrected (ensembles are typically overconfident).
+    """
+
+    def __init__(self, base_factory, cal_frac: float = 0.2, level: float = 0.9, seed: int = 0):
+        self.base_factory, self.cal_frac, self.level, self.seed = base_factory, cal_frac, level, seed
+
+    def fit(self, X: np.ndarray, Y: np.ndarray) -> "CalibratedSurrogate":
+        perm = np.random.default_rng(self.seed).permutation(len(X))
+        n_cal = max(5, int(self.cal_frac * len(X)))
+        cal, tr = perm[:n_cal], perm[n_cal:]
+        self.base = self.base_factory().fit(X[tr], Y[tr])
+        mu, sd = self.base.predict(X[cal])
+        z = np.abs(Y[cal] - mu) / np.maximum(sd, 1e-9)
+        # sd is inflated or shrunk so the nominal Gaussian interval hits the empirical quantile
+        self.scale = np.quantile(z, self.level, axis=0) / NormalDist().inv_cdf(0.5 + self.level / 2)
+        return self
+
+    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        mu, sd = self.base.predict(X)
+        return mu, sd * self.scale
+
+    @property
+    def ys(self) -> np.ndarray:
+        return self.base.ys
