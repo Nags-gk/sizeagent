@@ -99,17 +99,17 @@ def plot_surrogate(s):
 
 
 def robust_summary():
-    """Corner-aware study: per algorithm, robust-feasible runs and full-grid verification."""
-    rows = [json.loads(line) for line in (RES / "robust.jsonl").read_text().splitlines()]
-    out = {}
-    for algo in sorted({r["algo"] for r in rows}):
-        rs = [r for r in rows if r["algo"] == algo]
-        ok = [r for r in rs if r["first_robust_feasible"]]
-        budget = rs[0]["budget"]
-        out[algo] = {"runs": len(rs), "robust_feasible": len(ok), "budget": budget,
-                     "median_sims": statistics.median([r["first_robust_feasible"] or budget + 1 for r in rs]),
-                     "full_pass": [r["full_pass"] for r in rs], "full_total": rs[0]["full_total"],
-                     "median_power_uw": statistics.median([r["best_metrics"]["power_uw"] for r in ok]) if ok else None}
+    """Corner-aware study: per algorithm, robust-feasible runs, CIs and full-grid verification.
+    Prefers the 20-seed full-grid file and falls back to the older 6-seed one."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from robust_stats import summarize
+    path = RES / "robust_full_20.jsonl"
+    if not path.exists():
+        path = RES / "robust.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    out = summarize(rows)
+    for v in out.values():
+        v.pop("sims", None)
     return out
 
 

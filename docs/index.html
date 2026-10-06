@@ -249,12 +249,16 @@ fetch("data/results.json").then(r => r.json()).then(D => {
   if (D.robust) {
     ["robustH", "robustNote", "robustWrap"].forEach(id => document.getElementById(id).hidden = false);
     document.getElementById("robustTable").innerHTML =
-      `<tr><th>Strategy</th><th>Robust-feasible runs</th><th>Median sims</th><th>Full-grid passes (per seed)</th><th>Median power</th></tr>` +
-      Object.entries(D.robust).map(([a, r]) => `<tr><td>${B[a] ? B[a].label : a}</td>
-        <td class="${r.robust_feasible === r.runs ? "ok" : "no"}">${r.robust_feasible}/${r.runs}</td>
-        <td>${r.median_sims > r.budget ? "&gt;" + r.budget : fmt(r.median_sims, 0)}</td>
-        <td>${r.full_pass.join(", ")} / ${r.full_total}</td>
-        <td>${r.median_power_uw == null ? "n/a" : fmt(r.median_power_uw) + " µW"}</td></tr>`).join("");
+      `<tr><th>Strategy</th><th>Robust-feasible (95% CI)</th><th>Median sims (95% CI)</th><th>Final design passes all ${Object.values(D.robust)[0].full_total} grid points</th><th>Mean points passed</th><th>Median power</th></tr>` +
+      Object.entries(D.robust).map(([a, r]) => {
+        const pc = x => Math.round(x * 100) + "%";
+        return `<tr><td>${B[a] ? B[a].label : a}</td>
+        <td class="${r.robust_feasible === r.n ? "ok" : "no"}">${r.robust_feasible}/${r.n} (${pc(r.robust_feasible_ci[0])}–${pc(r.robust_feasible_ci[1])})</td>
+        <td>${r.median_sims > r.budget ? "&gt;" + r.budget : fmt(r.median_sims, 0)} (${fmt(r.median_sims_ci[0], 0)}–${r.median_sims_ci[1] > r.budget ? "&gt;" + r.budget : fmt(r.median_sims_ci[1], 0)})</td>
+        <td>${r.full_grid_all_pass}/${r.n} (${pc(r.full_grid_all_pass_ci[0])}–${pc(r.full_grid_all_pass_ci[1])})</td>
+        <td>${fmt(r.mean_grid_pass, 1)} / ${r.full_total}</td>
+        <td>${r.median_power_uw == null ? "n/a" : fmt(r.median_power_uw) + " µW"}</td></tr>`;
+      }).join("");
   }
   // PVT
   if (D.pvt) {
